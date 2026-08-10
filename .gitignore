@@ -3,3 +3,4 @@ data/
 backend/static/ext/*.zip
 __pycache__/
 .pytest_cache/
+.claude/

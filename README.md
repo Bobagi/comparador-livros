@@ -1,35 +1,137 @@
-# Comparador de precos de livros (novos + usados) - Brasil
+# Comparador de preços de livros (novos + usados) · Brasil
 
-Projeto pessoal do operador. Estado atual: **Fase 0 concluida (2026-08-10), portao APROVADO; nenhum codigo escrito ainda.** A spec completa foi colada na conversa de 2026-08-10 (busca por titulo/autor/ISBN, ofertas agregadas de ML/Shopee/Amazon/Enjoei/Estante Virtual/OLX, frete no preco final, honestidade sobre cobertura parcial; fase 2 = historico + alertas de preco).
+Compara o preço de um livro em várias lojas ao mesmo tempo, cobrindo o que os
+comparadores existentes ignoram: os **marketplaces C2C e de usados** (OLX, Enjoei,
+Mercado Livre de pessoa física) além do varejo. Dado um título, autor ou ISBN, mostra
+numa tela só as ofertas reais (preço, loja, condição, link), agrupadas por novo/usado.
 
-## Decisoes fechadas em 2026-08-10
-- **Arquitetura: Opcao A refinada** - extensao de navegador (MV3, uso pessoal via load unpacked) faz TODO o fetch das lojas no navegador do operador (IP residencial, sessao real); backend na VPS faz apenas normalizacao, matching, cache, historico e alertas. **NUNCA fazer fetch de loja a partir da VPS** (IP de datacenter e bloqueado por todas; re-verificado nesta data: Amazon 503, OLX 403, Estante captcha ShieldSquare, ML e Enjoei devolvem shell sem produto, APIs ML/Shopee 403).
-- **API do ML esta morta ate com token** (403 PolicyAgent em /sites/MLB/search para apps comuns, 2025-2026, multiplos relatos, sem desbloqueio documentado; afiliados ML sem API oficial). Estante Virtual e Enjoei: zero canal oficial. Amazon PA-API exige 3 vendas como associado (+manutencao); Shopee affiliate API exige aprovacao + ativacao manual. Ou seja: a perna "APIs oficiais" so vale para METADADOS (OpenLibrary funciona sem key; Google Books precisa de API key, sem ela da 429).
-- **Fase 1 (vertical): direito/concurso** - maior dispersao absoluta medida (livro de R$ 182 novo com usado a fracao) e edicao codificada no titulo (12a/13a/14a ed + ano + "conforme Lei X"), o que facilita o matching. Manga em catalogo (Berserk v1) teve a MENOR dispersao em reais (~R$ 12); o caso forte de manga e volume esgotado, nao vol em reimpressao.
-- **Fase 2 (primeira loja ponta a ponta): Estante Virtual** (HTML server-side, pagina por edicao com ISBN = matching quase gratis), depois ML (volume + C2C), depois OLX/Enjoei (texto livre, matching pesado), Shopee por ultimo (mais hostil; raspar o DOM da pagina, nao a API v4).
+Lojas cobertas: Mercado Livre, Amazon.com.br, Estante Virtual, OLX, Enjoei, Shopee.
 
-## Fase 0 - dados
-- `fase0/ofertas.csv` - ofertas reais coletadas (5 livros x 6 lojas) via snippets de busca externa em 2026-08-10. Colunas: livro, loja, preco_min, preco_max, condicao, edicao_nota, confianca, url. Separador virgula, decimal ponto.
-- `fase0/ruido-matching.csv` - anuncios EXCLUIDOS (kits/lotes, PDF, outra edicao, outro autor, DVD/figure do filme). E a semente do dataset rotulado de matching (meta: 40+ anuncios, medir precisao/recall, falso positivo pior que falso negativo).
-- **Limite de metodo:** precos vieram de snippets de indice de busca (idade desconhecida, dias a semanas), nenhum confirmado na pagina viva (bloqueio de datacenter). Frete NAO medido (nenhum snippet expoe). Validacao pendente barata: operador abrir ~10 URLs do CSV no navegador e conferir se o preco bate.
+> Projeto pessoal, sem afiliação com nenhuma das lojas. Rodando em
+> `https://livros.bobagi.space`.
 
-## Divida conhecida (aceita para o teste pessoal)
-- **A LIVROS_KEY do ingest viaja dentro da extensao** (`/ext/livros-coletor.zip`), entao NAO e
-  segredo: quem baixa le a chave. Aceitavel agora porque so da para poluir uma busca cujo UUID o
-  atacante conheca (nao enumeravel, sem listagem), toda url passa por allowlist de host+https, o
-  upload de HTML e capado a 60x200KB com poda e nunca servido de volta, e o dado e cache efemero sem
-  PII/dinheiro. Se virar publico/multiusuario: chave por-instalacao no handshake, ou assinar o
-  payload por origem, ou remover o upload. Detalhe em `.claude/security-sweep/20260810/report.md`.
+## A ideia central: a coleta roda no navegador, não no servidor
 
-## Dispersao medida (mesma edicao, entre lojas, sem frete)
-- Devoradores de Estrelas (Suma, brochura): novo 59,00 a 143,90; usado 65,00. Spread R$ 84,90. Obs: o usado custa MAIS que o novo mais barato.
-- Manual Dir. Penal PG Sanches: geracao atual (13a/14a ed) 130 a 182,15 = R$ 52,15; usados de edicoes antigas desde R$ 6. Maior dor em reais.
-- 1984 (Cia das Letras, brochura): usado 10 a novo 66,75 = R$ 56,75. O MESMO catalogo ML variou 24,94 a 66,75 entre snapshots.
-- Duna (Aleph, capa dura): usado 44,90 a novo 78,99 = R$ 34,09.
-- Berserk v1 Ed. Luxo: 25 a 36,65 = R$ 11,65 (unico abaixo do portao; item barato de catalogo, em pre-venda de reimpressao na Amazon).
-- Mediana dos spreads: ~R$ 52. Portao do operador (seguir se R$ 40+): **APROVADO**.
+A parte contraintuitiva do projeto. Todas essas lojas **bloqueiam requisições vindas de
+servidores** (IP de datacenter): de uma VPS, as 6 devolvem captcha, 403 ou uma casca de
+página sem produto nenhum. Isso foi medido, não suposto (veja `fase0/`). Não é problema
+de código ou de headers, é reputação de IP.
 
-## Fatos colaterais uteis
-- "Devoradores de Estrelas" e da **Suma de Letras** (grupo Cia das Letras), ISBN 9788556511218 - nao Arqueiro. O filme (mar/2026) encheu as buscas de DVD/Blu-ray/figures que o matching precisa excluir.
-- Paginas de catalogo do ML agregam vendedores e o preco do buy box oscila muito (3 snapshots do mesmo catalogo com 3 precos): historico de preco (fase 4) tem materia-prima real.
-- Shopee e Enjoei nao expoem preco nem em snippet nem em HTML sem JS: so saem com browser real (confirmacao pratica da arquitetura de extensao).
+A solução é a mesma do Keepa: **o fetch acontece numa extensão de navegador**, no
+navegador do próprio usuário (IP residencial, sessão real), onde não há nada de anômalo.
+O servidor **nunca raspa loja nenhuma**; ele só faz:
+
+- normalização de título/autor e **matching fuzzy** (é o núcleo difícil, veja abaixo);
+- classificação de condição (novo/usado/seminovo/lacrado) e de edição (capa dura vs
+  brochura, volume, etc.);
+- exclusão de ruído (kits, PDFs, "resumos", DVD/pôster do filme, outro autor);
+- cache, e um status honesto por loja (loja que falhou aparece como falha, nunca some).
+
+```
+livros.bobagi.space  (site normal, abre no navegador)
+        |
+   extensão MV3 no navegador do usuário  --fetch-->  as 6 lojas (IP residencial)
+        |  (manda o DOM cru; quando um parser falha, manda amostra do HTML)
+        v
+   backend (FastAPI)  ->  normaliza + matching + cache + honestidade por loja
+```
+
+### Por que não um site que raspa no servidor, ou só APIs oficiais?
+
+Foram as três opções avaliadas:
+
+- **Servidor raspando via proxy residencial:** funciona sem instalar nada, mas custa
+  dinheiro real (US$ 3 a 15/GB; a feature de alerta de usados, que exige varredura
+  recorrente, empurra para ~US$ 90 a 270/mês) e é frágil.
+- **Só APIs oficiais:** cobre no máximo Amazon + Shopee. A API de busca do Mercado Livre
+  passou a devolver 403 mesmo com token OAuth (2025+), e OLX/Enjoei/Estante Virtual não
+  têm API pública. Isso mata justamente o diferencial (C2C/usado).
+- **Extensão (escolhida):** cobertura completa das 6 lojas, custo zero, sem proxy.
+
+## O problema difícil: matching
+
+Em OLX, Enjoei e ML de pessoa física não há ISBN nem catálogo. O anúncio é texto livre
+("Livro Devoradores de Estrelas Andy Weir seminovo capa dura", "Kit 3 livros", "resumo em
+PDF"). O `backend/app/matching.py` resolve isso com uma regra de ouro: **um falso positivo
+(mostrar o livro errado) é muito pior que um falso negativo.** Na dúvida, o anúncio cai num
+grupo separado "Provavel (confira)" com o motivo, ou é filtrado, nunca confirmado às cegas.
+
+O comportamento é travado por `backend/tests/test_matching.py`, montado com **anúncios
+reais** rotulados à mão (as ofertas boas confirmam; kits/PDF/outro autor/outra edição nunca
+confirmam), e validado com mutação (quebrar a lógica de propósito deixa a suíte vermelha).
+
+## Rodar localmente
+
+Requisitos: Docker + Docker Compose.
+
+```bash
+# 1. chave que autentica a extensão -> backend
+cp .env.example .env
+python3 -c "import secrets; print('LIVROS_KEY=' + secrets.token_urlsafe(32))" > .env
+
+# 2. empacota a extensão (injeta a chave no config.js) e sobe o backend
+python3 scripts/build-extension.py
+docker compose up -d --build
+
+# 3. testes do matching
+docker compose run --rm --no-deps web python -m pytest tests/
+```
+
+O site fica em `http://127.0.0.1:3065`. Baixe a extensão pelo link da própria página
+(`/ext/livros-coletor.zip`), extraia, e carregue em `chrome://extensions` com o Modo do
+desenvolvedor ligado ("Carregar sem compactação", aponte para a pasta que contém o
+`manifest.json`). Recarregue a página: o chip no topo deve virar "coletor conectado".
+
+> A extensão **não** é versionada com a chave dentro. Você gera a sua `.env` e o
+> `build-extension.py` injeta a chave só no `.zip` (que é gitignored).
+
+## Estrutura
+
+```
+backend/
+  app/main.py        API FastAPI (busca, ingestão de resultados, cache, estático)
+  app/matching.py    normalização + matching + classificação (o núcleo, com testes)
+  tests/             suíte de matching com anúncios reais
+  static/            o site (HTML/CSS/JS puro, zero framework)
+extension/           a extensão MV3 (service worker + offscreen parser + content scripts)
+scripts/build-extension.py   empacota a extensão injetando a LIVROS_KEY
+fase0/               a pesquisa de validação (ofertas reais + o dataset de ruído)
+```
+
+## Fase 0: existe produto? (a pesquisa que veio antes do código)
+
+Antes de escrever qualquer coisa, medi a dispersão real de preço de 5 livros nas 6 lojas
+(`fase0/ofertas.csv`), com cada preço atrelado a uma URL e um trecho de evidência. O portão
+era: se a diferença entre o mais barato e o mais caro do mesmo livro for menor que ~R$ 15,
+não há produto. Resultado (mediana de spread ~R$ 52, sem contar frete):
+
+| Livro | Faixa (mesma edição) | Spread |
+|---|---|---|
+| Devoradores de Estrelas (Suma, brochura) | usado R$ 65 · novo R$ 59 a 143,90 | R$ 84,90 |
+| 1984 (Cia. das Letras) | usado R$ 10 · novo R$ 66,75 | R$ 56,75 |
+| Manual de Direito Penal PG (Sanches) | usado antigo R$ 6 · novo R$ 130 a 182 | R$ 52,15 |
+| Duna (Aleph, capa dura) | usado R$ 44,90 · novo R$ 78,99 | R$ 34,09 |
+| Berserk Vol. 1 Ed. Luxo | R$ 25 a 36,65 | R$ 11,65 |
+
+Conclusões que guiaram o produto: o vertical inicial é **direito/concurso** (maior dor em
+reais e edição codificada no título, o que facilita o matching); o usado nem sempre é o mais
+barato (em Devoradores, o usado custa mais que o novo mais barato); e mangá de catálogo em
+reimpressão tem spread pequeno demais (o caso forte de mangá é volume esgotado).
+
+`fase0/ruido-matching.csv` é a semente do dataset de matching: anúncios reais que **não** são
+o livro (kits, PDF, DVD/figure do filme, outro autor, box), rotulados com o motivo.
+
+## Limitações honestas
+
+- **Frete ainda não entra no total** (cada oferta mostra "+ frete a calcular"). Num livro
+  usado de R$ 30, o frete pode ser metade do preço; é a próxima peça importante.
+- Os preços da Fase 0 vieram de snippets de busca (idade de dias a semanas), não de página
+  confirmada ao vivo (a VPS é bloqueada). Servem para medir dispersão, não como preço atual.
+- **Legal/ToS:** raspar marketplace fere os Termos de Uso da maioria das lojas, mesmo com
+  dado público. Este projeto é de uso pessoal e baixo volume; respeita rate limiting, não
+  recria catálogo integral e não coleta dado pessoal de vendedor. Distribuição pública em
+  escala mudaria essa análise.
+
+## Licença
+
+MIT. Veja [LICENSE](LICENSE).
