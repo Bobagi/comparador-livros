@@ -1,0 +1,13 @@
+name: comparador-livros
+services:
+  web:
+    build: ./backend
+    container_name: livros-web
+    restart: unless-stopped
+    mem_limit: 512m
+    ports:
+      - "127.0.0.1:3065:8000"
+    environment:
+      - LIVROS_KEY=${LIVROS_KEY}
+    volumes:
+      - ./data:/data

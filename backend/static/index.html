@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Livros · Bobagi - comparador de precos (novos e usados)</title>
+<meta name="description" content="Compara precos de livros novos e usados no Brasil: Mercado Livre, OLX, Enjoei, Estante Virtual, Shopee e Amazon, com honestidade sobre o que foi coberto.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/static/fonts/faces.css">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="https://bobagi.space"><span class="brand-b">B</span> bobagi</a>
+  <span class="app-name">livros</span>
+  <span id="ext-chip" class="chip chip-off">coletor: nao detectado</span>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Quanto custa esse livro, em todo lugar?</h1>
+    <p class="sub">Novos e usados, lado a lado: Mercado Livre, OLX, Enjoei, Estante Virtual, Shopee e Amazon. A coleta roda no seu navegador (extensao), nunca no servidor.</p>
+    <form id="search-form" autocomplete="off">
+      <input id="q" name="q" type="search" required minlength="3" maxlength="120"
+             placeholder="titulo, autor ou ISBN (com ou sem hifen)">
+      <button type="submit" id="go">Buscar</button>
+    </form>
+    <p id="msg" class="msg" hidden></p>
+    <p class="hint">Exemplos: <button class="ex" type="button">manual de direito penal parte geral rogerio sanches</button> · <button class="ex" type="button">duna frank herbert capa dura</button> · <button class="ex" type="button">9788576573135</button></p>
+  </section>
+
+  <section id="ext-panel" class="panel" hidden>
+    <h2>Instale o coletor (1 minuto, so na primeira vez)</h2>
+    <p>As lojas bloqueiam servidores, entao a busca e feita pelo SEU navegador, como se voce abrisse cada loja. Sem extensao instalada a busca fica "aguardando coletor" e nada e coletado.</p>
+    <ol>
+      <li>Baixe o pacote: <a href="/ext/livros-coletor.zip">livros-coletor.zip</a> e extraia a pasta.</li>
+      <li>Abra <code>chrome://extensions</code>, ligue o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
+      <li>Clique em <strong>Carregar sem compactacao</strong> e escolha a pasta extraida. Depois recarregue esta pagina.</li>
+    </ol>
+    <p class="fine">A extensao so age quando esta pagina pede uma busca; ela nao le sua navegacao.</p>
+  </section>
+
+  <section id="status-area" hidden>
+    <div id="canonical" class="canonical"></div>
+    <div id="store-chips" class="chips"></div>
+  </section>
+
+  <section id="results" hidden>
+    <div id="group-novo" class="group"><h2>Novo</h2><div class="cards"></div></div>
+    <div id="group-usado" class="group"><h2>Usado e seminovo</h2><div class="cards"></div></div>
+    <div id="group-sem" class="group"><h2>Condicao nao informada</h2><div class="cards"></div></div>
+    <div id="group-prov" class="group prov"><h2>Provaveis (confira antes de confiar)</h2>
+      <p class="fine">Bateram no titulo mas algo nao fecha (autor ausente, formato nao confirmado). Preferimos avisar a errar.</p>
+      <div class="cards"></div></div>
+    <details id="filtered"><summary>Filtrados (kits, PDFs, outras edicoes): <span id="filtered-n">0</span></summary>
+      <div id="filtered-list"></div></details>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p>Cobertura parcial e sempre dita na cara: loja que falhou aparece como falha, nunca some. Frete ainda nao entra no total ("+ frete a calcular"). Projeto pessoal, sem afiliacao com as lojas.</p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
