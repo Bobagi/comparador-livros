@@ -34,9 +34,10 @@
     <h2>Instale o coletor (1 minuto, so na primeira vez)</h2>
     <p>As lojas bloqueiam servidores, entao a busca e feita pelo SEU navegador, como se voce abrisse cada loja. Sem extensao instalada a busca fica "aguardando coletor" e nada e coletado.</p>
     <ol>
-      <li>Baixe o pacote: <a href="/ext/livros-coletor.zip">livros-coletor.zip</a> e extraia a pasta.</li>
+      <li>Baixe o pacote: <a href="/ext/livros-coletor.zip">livros-coletor.zip</a> e extraia (botao direito, "Extrair tudo").</li>
       <li>Abra <code>chrome://extensions</code>, ligue o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
-      <li>Clique em <strong>Carregar sem compactacao</strong> e escolha a pasta extraida. Depois recarregue esta pagina.</li>
+      <li>Clique em <strong>Carregar sem compactacao</strong> e escolha a pasta que contem o <code>manifest.json</code> diretamente. Depois recarregue esta pagina.</li>
+      <li class="fine">Deu "manifesto faltando"? Voce apontou para uma pasta que so tem outra pasta dentro. Entre nela ate ver o <code>manifest.json</code> e selecione essa.</li>
     </ol>
     <p class="fine">A extensao so age quando esta pagina pede uma busca; ela nao le sua navegacao.</p>
   </section>

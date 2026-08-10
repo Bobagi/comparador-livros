@@ -24,12 +24,16 @@ def main() -> None:
     key = read_key()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     files = sorted(p for p in EXT.iterdir() if p.is_file())
+    # Arquivos na RAIZ do zip (sem pasta interna): o "Extrair tudo" do Windows
+    # ja cria uma pasta com o nome do zip; se o zip tambem tivesse uma pasta
+    # dentro, viraria livros-coletor/livros-coletor/manifest.json e o Chrome
+    # nao acha o manifesto ("manifest missing").
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
         for p in files:
             data = p.read_bytes()
             if p.name == "config.js":
                 data = data.replace(b"__LIVROS_KEY__", key.encode())
-            z.writestr(f"livros-coletor/{p.name}", data)
+            z.writestr(p.name, data)
     print(f"ok: {OUT} ({OUT.stat().st_size} bytes, {len(files)} arquivos)")
 
 
