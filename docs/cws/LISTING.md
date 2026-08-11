@@ -4,12 +4,17 @@ Tudo que o formulario da loja pede, pronto para colar. O pacote a enviar e o
 `backend/static/ext/livros-coletor.zip` (gerado por `scripts/build-extension.py`,
 sem segredo nenhum dentro; e o mesmo zip servido no site).
 
-> **Nota de versao (2026-08-11):** a extensao ja esta em revisao na loja como
-> **v0.2.0** com o nome antigo "Livros Bobagi - Coletor". Este kit e da **v0.3.0**,
-> ja renomeada para **Farolivro** com o icone novo (focinho). **Espere a revisao
-> atual terminar** antes de enviar a v0.3.0 (reenviar agora reinicia a fila). Quando
-> a v0.2.0 for aprovada, suba a v0.3.0 por cima: mesmo item, nova versao, o nome da
-> ficha passa a ser Farolivro.
+> **★ REJEICAO da v0.2.0 (2026-08-11) e como este kit corrige:** a v0.2.0 ("Livros
+> Bobagi - Coletor") foi **rejeitada por "Spam de palavra-chave"** (ref. `Yellow
+> Argon`): a Chrome Web Store marcou a **lista das seis lojas** na descricao
+> ("Mercado Livre, Amazon.com.br, Estante Virtual, OLX, Enjoei e Shopee") como
+> palavras-chave excessivas/irrelevantes de marcas de 3os. **A descricao abaixo ja
+> foi corrigida** (nao enumera as marcas; descreve a funcao de forma generica). A
+> revisao terminou (como rejeicao), entao **agora e a hora de subir a v0.3.0
+> Farolivro** com esta descricao nova - resolve o rebrand e a rejeicao de uma vez.
+> NAO use "Contestar": corrigir o texto e reenviar aprova mais rapido. Regra
+> duravel: na ficha da CWS, **nao liste nomes de lojas/marcas de 3os** (isso conta
+> como keyword spam); a lista das lojas suportadas fica no site, nao na ficha.
 
 ## Passos da conta (so o dono faz, ~10 min + US$ 5 uma vez)
 
@@ -33,31 +38,32 @@ Cada atualizacao futura passa por revisao de novo, quase sempre mais rapida.
 - **Descricao (colar):**
 
 ```
-Farolivro fareja o menor preco de um livro, NOVO ou USADO, em seis lojas ao
-mesmo tempo: Mercado Livre, Amazon.com.br, Estante Virtual, OLX, Enjoei e
-Shopee. Companheiro do site livros.bobagi.space.
+Farolivro fareja o menor preco de um livro, NOVO ou USADO, comparando varios
+marketplaces brasileiros de uma vez, sem voce abrir site por site. E o
+companheiro do site livros.bobagi.space, onde os resultados aparecem lado a
+lado, agrupados por novo e usado.
 
-Por que uma extensao? As lojas bloqueiam buscas vindas de servidores. O
-Farolivro faz a busca a partir do SEU navegador, como se voce mesmo abrisse
-cada loja, e envia os anuncios encontrados (titulo, preco, link) para o site
-montar o comparativo.
+Por que uma extensao? Muitos sites bloqueiam buscas automatizadas vindas de
+servidores. O Farolivro faz a busca a partir do SEU navegador, como se voce
+mesmo abrisse cada site, e envia os anuncios encontrados (titulo, preco, link)
+para o comparativo.
 
 Como usar:
 1. Instale o Farolivro.
-2. Abra livros.bobagi.space (o chip "Farolivro conectado" acende).
-3. Busque por titulo, autor ou ISBN e veja as ofertas agrupadas em novo,
-   usado e "provavel", com o status honesto de cada loja.
+2. Abra livros.bobagi.space (o indicador "Farolivro conectado" acende).
+3. Busque por titulo, autor ou ISBN e veja as ofertas agrupadas em novo e
+   usado, com o status honesto de cada fonte.
 
 Privacidade, direto ao ponto:
 - So age quando VOCE pede uma busca no site. Nunca roda nas paginas que voce
   visita nem le sua navegacao.
-- Coleta apenas o texto da busca e o conteudo publico das paginas de RESULTADO
-  de busca das lojas. Nada de contas, cookies, historico ou dado pessoal.
+- Coleta apenas o texto da busca e o conteudo publico das paginas de resultado
+  de busca. Nada de contas, cookies, historico ou dado pessoal.
 - Sem anuncios, sem rastreadores, codigo aberto:
   https://github.com/Bobagi/comparador-livros
 
 Politica de privacidade: https://livros.bobagi.space/privacidade
-Projeto pessoal, sem afiliacao com nenhuma das lojas.
+Projeto pessoal, sem afiliacao com nenhuma loja.
 ```
 
 - **Icone da loja (128x128):** `docs/cws/icon128.png` (focinho Farolivro)
