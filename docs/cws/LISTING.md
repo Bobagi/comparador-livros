@@ -33,7 +33,7 @@ Cada atualizacao futura passa por revisao de novo, quase sempre mais rapida.
 
 - **Idioma da ficha:** Portugues (Brasil)
 - **Nome:** ja vem do manifest: `Farolivro`
-- **Resumo** (ja vem do manifest): `Fareje o menor preco de um livro, novo ou usado, em 6 lojas ao mesmo tempo, a partir do seu navegador. So age quando voce pede uma busca; nao le sua navegacao.`
+- **Resumo** (ja vem do manifest; limite de **132 caracteres**): `Fareje o menor preco de um livro, novo ou usado, em varias lojas de uma vez. Nao le sua navegacao.`
 - **Categoria:** Compras (Shopping)
 - **Descricao (colar):**
 
