@@ -1,8 +1,15 @@
-# Kit de publicacao na Chrome Web Store · Livros Bobagi - Coletor
+# Kit de publicacao na Chrome Web Store · Farolivro
 
 Tudo que o formulario da loja pede, pronto para colar. O pacote a enviar e o
 `backend/static/ext/livros-coletor.zip` (gerado por `scripts/build-extension.py`,
 sem segredo nenhum dentro; e o mesmo zip servido no site).
+
+> **Nota de versao (2026-08-11):** a extensao ja esta em revisao na loja como
+> **v0.2.0** com o nome antigo "Livros Bobagi - Coletor". Este kit e da **v0.3.0**,
+> ja renomeada para **Farolivro** com o icone novo (focinho). **Espere a revisao
+> atual terminar** antes de enviar a v0.3.0 (reenviar agora reinicia a fila). Quando
+> a v0.2.0 for aprovada, suba a v0.3.0 por cima: mesmo item, nova versao, o nome da
+> ficha passa a ser Farolivro.
 
 ## Passos da conta (so o dono faz, ~10 min + US$ 5 uma vez)
 
@@ -20,24 +27,24 @@ Cada atualizacao futura passa por revisao de novo, quase sempre mais rapida.
 ## Ficha (aba "Detalhes do item")
 
 - **Idioma da ficha:** Portugues (Brasil)
-- **Nome:** ja vem do manifest: `Livros Bobagi - Coletor`
-- **Resumo** (ja vem do manifest): `Busca ofertas de livros nas lojas brasileiras a partir do seu navegador, a pedido de livros.bobagi.space. Nao le sua navegacao.`
+- **Nome:** ja vem do manifest: `Farolivro`
+- **Resumo** (ja vem do manifest): `Fareje o menor preco de um livro, novo ou usado, em 6 lojas ao mesmo tempo, a partir do seu navegador. So age quando voce pede uma busca; nao le sua navegacao.`
 - **Categoria:** Compras (Shopping)
 - **Descricao (colar):**
 
 ```
-Companheira do comparador de precos de livros livros.bobagi.space: compara
-livros NOVOS e USADOS lado a lado em Mercado Livre, Amazon.com.br, Estante
-Virtual, OLX, Enjoei e Shopee.
+Farolivro fareja o menor preco de um livro, NOVO ou USADO, em seis lojas ao
+mesmo tempo: Mercado Livre, Amazon.com.br, Estante Virtual, OLX, Enjoei e
+Shopee. Companheiro do site livros.bobagi.space.
 
-Por que uma extensao? As lojas bloqueiam buscas vindas de servidores. Esta
-extensao faz a busca a partir do SEU navegador, como se voce mesmo abrisse
+Por que uma extensao? As lojas bloqueiam buscas vindas de servidores. O
+Farolivro faz a busca a partir do SEU navegador, como se voce mesmo abrisse
 cada loja, e envia os anuncios encontrados (titulo, preco, link) para o site
 montar o comparativo.
 
 Como usar:
-1. Instale a extensao.
-2. Abra livros.bobagi.space (o chip "coletor conectado" acende).
+1. Instale o Farolivro.
+2. Abra livros.bobagi.space (o chip "Farolivro conectado" acende).
 3. Busque por titulo, autor ou ISBN e veja as ofertas agrupadas em novo,
    usado e "provavel", com o status honesto de cada loja.
 
@@ -53,7 +60,7 @@ Politica de privacidade: https://livros.bobagi.space/privacidade
 Projeto pessoal, sem afiliacao com nenhuma das lojas.
 ```
 
-- **Icone da loja (128x128):** `docs/cws/icon128.png`
+- **Icone da loja (128x128):** `docs/cws/icon128.png` (focinho Farolivro)
 - **Screenshots (1280x800):** `docs/cws/screenshot-1-home.png` e
   `docs/cws/screenshot-2-resultados.png`
 - **Site oficial:** `https://livros.bobagi.space`
@@ -64,7 +71,7 @@ Projeto pessoal, sem afiliacao com nenhuma das lojas.
 
 ```
 Comparar precos de livros: quando o usuario pede uma busca no site
-livros.bobagi.space, a extensao consulta as paginas publicas de resultado de
+livros.bobagi.space, o Farolivro consulta as paginas publicas de resultado de
 busca de seis lojas brasileiras e envia os anuncios encontrados (titulo,
 preco, link) ao site, que monta o comparativo. Nada roda sem pedido do
 usuario.
@@ -74,7 +81,7 @@ usuario.
   - `offscreen`: "Interpretar (DOMParser) o HTML das paginas de busca das lojas; o service worker MV3 nao tem DOM."
   - `storage`: "Guardar o identificador aleatorio de instalacao que autentica os envios ao backend. Nenhum dado pessoal."
   - `scripting`: "Injetar o leitor de pagina somente nas abas que a propria extensao abre (lojas que exigem renderizacao). Nunca roda nas abas do usuario."
-  - **Permissoes de host** (uma justificativa geral): "As seis lojas: buscar a pagina publica de resultados a pedido do usuario. livros.bobagi.space: receber o pedido de busca e devolver os resultados. A extensao so age apos um pedido explicito do usuario no site."
+  - **Permissoes de host** (uma justificativa geral): "As seis lojas: buscar a pagina publica de resultados a pedido do usuario. livros.bobagi.space: receber o pedido de busca e devolver os resultados. O Farolivro so age apos um pedido explicito do usuario no site."
 - **Uso de codigo remoto:** Nao.
 - **Dados de usuario coletados:** marcar somente **"Conteudo do site"**
   (website content) - conteudo das paginas publicas de resultado de busca das

@@ -3,43 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Livros · Bobagi - comparador de precos (novos e usados)</title>
-<meta name="description" content="Compara precos de livros novos e usados no Brasil: Mercado Livre, OLX, Enjoei, Estante Virtual, Shopee e Amazon, com honestidade sobre o que foi coberto.">
+<title>Farolivro - fareje o menor preco de qualquer livro (novos e usados)</title>
+<meta name="description" content="Farolivro compara precos de livros novos e usados no Brasil: Mercado Livre, OLX, Enjoei, Estante Virtual, Shopee e Amazon, com honestidade sobre o que foi coberto.">
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="/static/fonts/faces.css">
 <link rel="stylesheet" href="/static/style.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22124%22%20height%3D%22124%22%20rx%3D%2228%22%20fill%3D%22%2314121c%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffd21a%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M98%2040%20q8%20-7%200%20-15%22%2F%3E%3Cpath%20d%3D%22M109%2036%20q10%20-9%200%20-19%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M64%2026c-22%200-35%2014-35%2031c0%2018%2015%2033%2035%2033c20%200%2035-15%2035-33c0-17-13-31-35-31z%22%20fill%3D%22%23ffd21a%22%2F%3E%3Cpath%20d%3D%22M40%2048q24-13%2048%200q6%203%203%2013q-6%2017-27%2020q-21-3-27-20q-3-10%203-13z%22%20fill%3D%22%2314121c%22%2F%3E%3Cellipse%20cx%3D%2255%22%20cy%3D%2249%22%20rx%3D%228%22%20ry%3D%224.5%22%20fill%3D%22%23fff%22%20opacity%3D%220.28%22%20transform%3D%22rotate%28-12%2055%2049%29%22%2F%3E%3Cpath%20d%3D%22M64%2084%20L64%2092%22%20stroke%3D%22%2314121c%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M64%2092%20q-12%208%20-22%201%22%20fill%3D%22none%22%20stroke%3D%22%2314121c%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M64%2092%20q12%208%2022%201%22%20fill%3D%22none%22%20stroke%3D%22%2314121c%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M64%20102c-7-5-18-6-26-3l0%2019c8-3%2019-2%2026%203z%22%20fill%3D%22%23ffd21a%22%2F%3E%3Cpath%20d%3D%22M64%20102c7-5%2018-6%2026-3l0%2019c-8-3-19-2-26%203z%22%20fill%3D%22%23ffd21a%22%2F%3E%3C%2Fsvg%3E">
 </head>
 <body>
 <header class="top">
   <a class="brand" href="https://bobagi.space"><span class="brand-b">B</span> bobagi</a>
-  <span class="app-name">livros</span>
-  <span id="ext-chip" class="chip chip-off">coletor: nao detectado</span>
+  <span class="app-name">farolivro</span>
+  <span id="ext-chip" class="chip chip-off">Farolivro: nao instalado</span>
 </header>
 
 <main class="wrap">
   <section class="hero">
     <h1>Quanto custa esse livro, em todo lugar?</h1>
-    <p class="sub">Novos e usados, lado a lado: Mercado Livre, OLX, Enjoei, Estante Virtual, Shopee e Amazon. A coleta roda no seu navegador (extensao), nunca no servidor.</p>
+    <p class="sub">O Farolivro fareja o menor preco de um livro, novo ou usado, em seis lojas ao mesmo tempo: Mercado Livre, OLX, Enjoei, Estante Virtual, Shopee e Amazon. A busca roda no seu navegador (extensao), nunca no servidor.</p>
     <form id="search-form" autocomplete="off">
       <input id="q" name="q" type="search" required minlength="3" maxlength="120"
              placeholder="titulo, autor ou ISBN (com ou sem hifen)">
-      <button type="submit" id="go">Buscar</button>
+      <button type="submit" id="go">Farejar</button>
     </form>
     <p id="msg" class="msg" hidden></p>
+    <div id="sniffer" hidden aria-live="polite">
+      <svg viewBox="0 0 128 128" width="52" height="52" role="img" aria-label="farejando">
+        <g class="fl-snout">
+          <g class="fl-sniff" fill="none" stroke="#ffd21a" stroke-width="6" stroke-linecap="round">
+            <path d="M98 40 q8 -7 0 -15"/>
+            <path class="fl-sniff2" d="M109 36 q10 -9 0 -19"/>
+          </g>
+          <path d="M64 26c-22 0-35 14-35 31c0 18 15 33 35 33c20 0 35-15 35-33c0-17-13-31-35-31z" fill="#ffd21a"/>
+          <path d="M40 48q24-13 48 0q6 3 3 13q-6 17-27 20q-21-3-27-20q-3-10 3-13z" fill="#14121c"/>
+          <ellipse cx="55" cy="49" rx="8" ry="4.5" fill="#fff" opacity="0.28" transform="rotate(-12 55 49)"/>
+          <path d="M64 84 L64 92" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+          <path d="M64 92 q-12 8 -22 1" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+          <path d="M64 92 q12 8 22 1" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+          <path d="M64 102c-7-5-18-6-26-3l0 19c8-3 19-2 26 3z" fill="#ffd21a"/>
+          <path d="M64 102c7-5 18-6 26-3l0 19c-8-3-19-2-26 3z" fill="#ffd21a"/>
+        </g>
+      </svg>
+      <span id="sniffer-text">farejando as lojas...</span>
+    </div>
     <p class="hint">Exemplos: <button class="ex" type="button">manual de direito penal parte geral rogerio sanches</button> · <button class="ex" type="button">duna frank herbert capa dura</button> · <button class="ex" type="button">9788576573135</button></p>
   </section>
 
   <section id="ext-panel" class="panel" hidden>
-    <h2>Instale o coletor (1 minuto, so na primeira vez)</h2>
-    <p>As lojas bloqueiam servidores, entao a busca e feita pelo SEU navegador, como se voce abrisse cada loja. Sem extensao instalada a busca fica "aguardando coletor" e nada e coletado.</p>
+    <h2>Instale o Farolivro (1 minuto, so na primeira vez)</h2>
+    <p>As lojas bloqueiam servidores, entao a busca e feita pelo SEU navegador, como se voce abrisse cada loja. Sem o Farolivro instalado a busca fica "aguardando o Farolivro" e nada e farejado.</p>
     <ol>
-      <li>Baixe o pacote: <a href="/ext/livros-coletor.zip">livros-coletor.zip</a> e extraia (botao direito, "Extrair tudo").</li>
+      <li>Baixe o pacote: <a href="/ext/livros-coletor.zip">Farolivro (.zip)</a> e extraia (botao direito, "Extrair tudo").</li>
       <li>Abra <code>chrome://extensions</code>, ligue o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
       <li>Clique em <strong>Carregar sem compactacao</strong> e escolha a pasta que contem o <code>manifest.json</code> diretamente. Depois recarregue esta pagina.</li>
       <li class="fine">Deu "manifesto faltando"? Voce apontou para uma pasta que so tem outra pasta dentro. Entre nela ate ver o <code>manifest.json</code> e selecione essa.</li>
     </ol>
-    <p class="fine">A extensao so age quando esta pagina pede uma busca; ela nao le sua navegacao.</p>
+    <p class="fine">O Farolivro so age quando esta pagina pede uma busca; ele nao le sua navegacao.</p>
   </section>
 
   <section id="status-area" hidden>
@@ -61,7 +80,7 @@
 </main>
 
 <footer class="foot">
-  <p>Cobertura parcial e sempre dita na cara: loja que falhou aparece como falha, nunca some. Frete ainda nao entra no total ("+ frete a calcular"). Projeto pessoal, sem afiliacao com as lojas. <a href="/privacidade">Privacidade</a>.</p>
+  <p>Cobertura parcial e sempre dita na cara: loja que falhou aparece como falha, nunca some. Frete ainda nao entra no total ("+ frete a calcular"). Farolivro e um projeto pessoal, sem afiliacao com as lojas. <a href="/privacidade">Privacidade</a>.</p>
 </footer>
 
 <script src="/static/app.js"></script>

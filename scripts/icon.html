@@ -1,20 +1,49 @@
 <!doctype html>
-<!-- Fonte do icone da extensao. Renderizar com scripts/build-icons.sh
-     (chrome-headless-shell, fundo transparente) nos tamanhos 16/32/48/128. -->
+<!-- Fonte do icone da extensao Farolivro: focinho de cachorro farejando um livro.
+     Renderizar com scripts/build-icons.sh (chrome-headless-shell, fundo transparente)
+     nos tamanhos 16/32/48/128. Tokens: --bg #14121c, --yellow #ffd21a. -->
 <html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0}svg{display:block}</style></head>
 <body>
 <svg width="100%" height="100%" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
   <rect x="2" y="2" width="124" height="124" rx="28" fill="#14121c"/>
   <rect x="2" y="2" width="124" height="124" rx="28" fill="none" stroke="rgba(245,241,230,0.18)" stroke-width="3"/>
-  <!-- livro aberto -->
-  <path d="M61 42 C52 34.5 36 31.5 23 36 L23 88 C36 83.5 52 86.5 61 94 Z" fill="#ffd21a"/>
-  <path d="M67 42 C76 34.5 92 31.5 105 36 L105 88 C92 83.5 76 86.5 67 94 Z" fill="#ffd21a"/>
-  <!-- linhas de texto sugeridas nas paginas -->
-  <path d="M30 48 C39 45.5 49 47 55 50" stroke="#14121c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-  <path d="M30 60 C39 57.5 49 59 55 62" stroke="#14121c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-  <path d="M30 72 C39 69.5 49 71 55 74" stroke="#14121c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-  <path d="M98 48 C89 45.5 79 47 73 50" stroke="#14121c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-  <path d="M98 60 C89 57.5 79 59 73 62" stroke="#14121c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-  <path d="M98 72 C89 69.5 79 71 73 74" stroke="#14121c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+  <!-- linhas de cheiro (farejando), sobem a direita -->
+  <g fill="none" stroke="#ffd21a" stroke-width="5" stroke-linecap="round" opacity="0.92">
+    <path d="M98 40 q8 -7 0 -15"/>
+    <path d="M109 36 q10 -9 0 -19"/>
+  </g>
+
+  <!-- focinho: bloco amarelo (fur do focinho), mais largo em cima que embaixo -->
+  <path d="M64 26
+           c-22 0 -35 14 -35 31
+           c0 18 15 33 35 33
+           c20 0 35 -15 35 -33
+           c0 -17 -13 -31 -35 -31 z" fill="#ffd21a"/>
+
+  <!-- NARIZ (leather) escuro, grande e central: triangulo bem arredondado -->
+  <path d="M40 48
+           q24 -13 48 0
+           q6 3 3 13
+           q-6 17 -27 20
+           q-21 -3 -27 -20
+           q-3 -10 3 -13 z" fill="#14121c"/>
+  <!-- brilho do nariz -->
+  <ellipse cx="55" cy="49" rx="8" ry="4.5" fill="#ffffff" opacity="0.28" transform="rotate(-12 55 49)"/>
+  <!-- narinas (recorte amarelo), viradas para dentro -->
+  <path d="M57 66 q-5 -3 -3 -9" fill="none" stroke="#ffd21a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M71 66 q5 -3 3 -9" fill="none" stroke="#ffd21a" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- philtrum + boca do focinho -->
+  <path d="M64 84 L64 92" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+  <path d="M64 92 q-12 8 -22 1" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+  <path d="M64 92 q12 8 22 1" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- livro sendo farejado, embaixo -->
+  <g>
+    <path d="M64 102 c-7 -5 -18 -6 -26 -3 l0 19 c8 -3 19 -2 26 3 z" fill="#ffd21a"/>
+    <path d="M64 102 c7 -5 18 -6 26 -3 l0 19 c-8 -3 -19 -2 -26 3 z" fill="#ffd21a"/>
+    <path d="M64 102 L64 121" fill="none" stroke="#14121c" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
 </svg>
 </body></html>

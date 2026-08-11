@@ -32,6 +32,15 @@ a{color:var(--yellow)}
 #q:focus{outline:2px solid var(--yellow);outline-offset:1px}
 #go{background:var(--yellow);color:#14121c;border:0;border-radius:10px;font-family:var(--font-display);font-weight:800;font-size:1rem;padding:.75rem 1.4rem;cursor:pointer;min-height:44px}
 #go:disabled{opacity:.55;cursor:wait}
+#sniffer{display:flex;align-items:center;gap:.7rem;margin:1.1rem 0 .2rem;color:var(--muted);font-family:var(--font-mono);font-size:.9rem}
+#sniffer[hidden]{display:none}
+#sniffer svg{flex:0 0 auto}
+.fl-snout{animation:snoutbob 1.1s ease-in-out infinite;transform-origin:64px 74px}
+.fl-sniff path{animation:snoutsniff 1.1s ease-in-out infinite}
+.fl-sniff .fl-sniff2{animation-delay:.28s}
+@keyframes snoutbob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2px) rotate(-4deg)}}
+@keyframes snoutsniff{0%,100%{opacity:.2;transform:translate(0,0)}50%{opacity:1;transform:translate(2px,-2px)}}
+@media (prefers-reduced-motion: reduce){.fl-snout,.fl-sniff path{animation:none}}
 .hint{color:var(--muted);font-size:.85rem;margin-top:.7rem}
 .ex{background:none;border:0;border-bottom:1px dotted var(--line-strong);color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer;padding:.15rem 0}
 .ex:hover{color:var(--yellow)}

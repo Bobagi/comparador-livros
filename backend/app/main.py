@@ -169,7 +169,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Livros Bobagi", lifespan=lifespan, docs_url=None, redoc_url=None)
+app = FastAPI(title="Farolivro", lifespan=lifespan, docs_url=None, redoc_url=None)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"chrome-extension://.*|https://livros\.bobagi\.space",

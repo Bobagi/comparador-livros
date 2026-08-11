@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Livros Bobagi - Coletor",
-  "version": "0.2.0",
-  "description": "Busca ofertas de livros nas lojas brasileiras a partir do seu navegador, a pedido de livros.bobagi.space. Nao le sua navegacao.",
+  "name": "Farolivro",
+  "version": "0.3.0",
+  "description": "Fareje o menor preco de um livro, novo ou usado, em 6 lojas ao mesmo tempo, a partir do seu navegador. So age quando voce pede uma busca; nao le sua navegacao.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon16.png",

@@ -9,6 +9,7 @@
   const go = $('#go');
   const extChip = $('#ext-chip');
   const extPanel = $('#ext-panel');
+  const sniffer = $('#sniffer');
   const msg = $('#msg');
   const statusArea = $('#status-area');
   const results = $('#results');
@@ -18,17 +19,17 @@
     olx: 'OLX', enjoei: 'Enjoei', shopee: 'Shopee',
   };
   const STATUS_LABEL = {
-    pending: 'coletando...', ok: 'ok', empty: 'vazio (parser falhou, amostra enviada)',
-    blocked: 'bloqueado', error: 'erro', sem_coletor: 'sem coletor',
+    pending: 'farejando...', ok: 'ok', empty: 'vazio (parser falhou, amostra enviada)',
+    blocked: 'bloqueado', error: 'erro', sem_coletor: 'sem o Farolivro',
   };
-  const STATUS_LABEL_NO_EXT = { ...STATUS_LABEL, pending: 'aguardando coletor' };
+  const STATUS_LABEL_NO_EXT = { ...STATUS_LABEL, pending: 'aguardando o Farolivro' };
 
   let extReady = false;
   let pollTimer = null;
 
   function setExt(ready, version) {
     extReady = ready;
-    extChip.textContent = ready ? `coletor conectado v${version}` : 'coletor: nao detectado';
+    extChip.textContent = ready ? `Farolivro conectado v${version}` : 'Farolivro: nao instalado';
     extChip.classList.toggle('chip-on', ready);
     extChip.classList.toggle('chip-off', !ready);
     extPanel.hidden = ready;
@@ -67,11 +68,13 @@
             detail: JSON.stringify({ searchId: data.id, query, canonical: data.canonical }),
           }));
         } else {
-          showMsg('Sem o coletor instalado nada e buscado nas lojas. Instale a extensao abaixo e busque de novo (ou aguarde: outra maquina com o coletor pode completar esta busca).');
+          showMsg('Sem o Farolivro instalado nada e buscado nas lojas. Instale a extensao abaixo e fareje de novo (ou aguarde: outra maquina com o Farolivro pode completar esta busca).');
         }
       }
+      if (extReady) sniffer.hidden = false;
       poll(data.id);
     } catch (e) {
+      sniffer.hidden = true;
       showMsg(`Falha ao criar a busca: ${e.message}`);
       go.disabled = false;
     }
@@ -90,10 +93,12 @@
         render(data);
         if (data.done || Date.now() - started > 160000) {
           clearInterval(pollTimer);
+          sniffer.hidden = true;
           go.disabled = false;
         }
       } catch (e) {
         clearInterval(pollTimer);
+        sniffer.hidden = true;
         go.disabled = false;
         showMsg(`Falha ao ler resultados: ${e.message}`);
       }
@@ -192,7 +197,7 @@
     if (data.done && !anyOffer) {
       const allDead = data.stores.every((s) => s.status !== 'ok');
       showMsg(allDead
-        ? 'Nenhuma loja respondeu com dados. Se o coletor esta instalado, as amostras de falha ja foram enviadas para calibrar os parsers.'
+        ? 'Nenhuma loja respondeu com dados. Se o Farolivro esta instalado, as amostras de falha ja foram enviadas para calibrar os parsers.'
         : 'As lojas responderam mas nenhum anuncio passou no matching. Veja os filtrados abaixo.');
     }
   }

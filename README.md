@@ -79,7 +79,7 @@ docker compose run --rm --no-deps web python -m pytest tests/
 O site fica em `http://127.0.0.1:3065`. Baixe a extensão pelo link da própria página
 (`/ext/livros-coletor.zip`), extraia, e carregue em `chrome://extensions` com o Modo do
 desenvolvedor ligado ("Carregar sem compactação", aponte para a pasta que contém o
-`manifest.json`). Recarregue a página: o chip no topo deve virar "coletor conectado".
+`manifest.json`). Recarregue a página: o chip no topo deve virar "Farolivro conectado".
 
 ### Como a extensão se autentica (sem segredo no pacote)
 
