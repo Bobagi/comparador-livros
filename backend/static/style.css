@@ -73,6 +73,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
 .f-item a{color:var(--muted)}
 .msg{margin-top:1.2rem;color:var(--warn);border:1px dashed var(--warn);border-radius:10px;padding:.6rem .8rem;font-size:.9rem}
 .foot{border-top:1px solid var(--line);color:var(--muted);font-size:.8rem;padding:1rem 1.2rem;max-width:100%}
+.foot a{display:inline-block;min-height:24px;line-height:24px}
 @media (max-width:560px){
   .card{grid-template-columns:1fr}
   .card .t{grid-column:1}

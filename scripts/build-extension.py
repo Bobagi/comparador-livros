@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Empacota a extensao em backend/static/ext/livros-coletor.zip,
-injetando a LIVROS_KEY do .env no config.js. Rodar da raiz do projeto."""
+"""Empacota a extensao em backend/static/ext/livros-coletor.zip.
 
-import re
-import sys
+O zip resultante e IDENTICO ao enviado a Chrome Web Store: nao carrega
+segredo nenhum (a extensao se registra no backend no primeiro uso, via
+POST /api/installs). Rodar da raiz do projeto."""
+
 import zipfile
 from pathlib import Path
 
@@ -12,28 +13,16 @@ EXT = ROOT / "extension"
 OUT = ROOT / "backend" / "static" / "ext" / "livros-coletor.zip"
 
 
-def read_key() -> str:
-    env = (ROOT / ".env").read_text()
-    m = re.search(r"^LIVROS_KEY=(\S+)$", env, re.M)
-    if not m:
-        sys.exit("LIVROS_KEY nao encontrada no .env")
-    return m.group(1)
-
-
 def main() -> None:
-    key = read_key()
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    files = sorted(p for p in EXT.iterdir() if p.is_file())
+    files = sorted(p for p in EXT.rglob("*") if p.is_file())
     # Arquivos na RAIZ do zip (sem pasta interna): o "Extrair tudo" do Windows
     # ja cria uma pasta com o nome do zip; se o zip tambem tivesse uma pasta
     # dentro, viraria livros-coletor/livros-coletor/manifest.json e o Chrome
     # nao acha o manifesto ("manifest missing").
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
         for p in files:
-            data = p.read_bytes()
-            if p.name == "config.js":
-                data = data.replace(b"__LIVROS_KEY__", key.encode())
-            z.writestr(p.name, data)
+            z.writestr(str(p.relative_to(EXT)), p.read_bytes())
     print(f"ok: {OUT} ({OUT.stat().st_size} bytes, {len(files)} arquivos)")
 
 

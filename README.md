@@ -65,15 +65,14 @@ confirmam), e validado com mutação (quebrar a lógica de propósito deixa a su
 Requisitos: Docker + Docker Compose.
 
 ```bash
-# 1. chave que autentica a extensão -> backend
-cp .env.example .env
+# 1. chave MASTER do backend (dev local / curl; a extensão não usa essa chave)
 python3 -c "import secrets; print('LIVROS_KEY=' + secrets.token_urlsafe(32))" > .env
 
-# 2. empacota a extensão (injeta a chave no config.js) e sobe o backend
+# 2. empacota a extensão e sobe o backend
 python3 scripts/build-extension.py
 docker compose up -d --build
 
-# 3. testes do matching
+# 3. testes (matching + autenticação da ingestão)
 docker compose run --rm --no-deps web python -m pytest tests/
 ```
 
@@ -82,8 +81,16 @@ O site fica em `http://127.0.0.1:3065`. Baixe a extensão pelo link da própria 
 desenvolvedor ligado ("Carregar sem compactação", aponte para a pasta que contém o
 `manifest.json`). Recarregue a página: o chip no topo deve virar "coletor conectado".
 
-> A extensão **não** é versionada com a chave dentro. Você gera a sua `.env` e o
-> `build-extension.py` injeta a chave só no `.zip` (que é gitignored).
+### Como a extensão se autentica (sem segredo no pacote)
+
+O pacote da extensão é público (é o mesmo zip enviado à Chrome Web Store), então ele
+**não carrega chave nenhuma**. No primeiro uso a extensão se registra no backend
+(`POST /api/installs`), recebe um id + token próprios da instalação e guarda no
+`chrome.storage.local`; o backend guarda só o sha256 do token. Controles de abuso:
+teto de registros por IP/dia, rate limit de envios por instalação, busca velha
+(15 min+) não aceita mais resultado, e o rate limit do nginx em `/api/`.
+A `LIVROS_KEY` do `.env` continua existindo apenas como chave master de
+desenvolvimento (testes via curl).
 
 ## Estrutura
 
@@ -94,7 +101,7 @@ backend/
   tests/             suíte de matching com anúncios reais
   static/            o site (HTML/CSS/JS puro, zero framework)
 extension/           a extensão MV3 (service worker + offscreen parser + content scripts)
-scripts/build-extension.py   empacota a extensão injetando a LIVROS_KEY
+scripts/build-extension.py   empacota a extensão (zip idêntico ao da Chrome Web Store)
 fase0/               a pesquisa de validação (ofertas reais + o dataset de ruído)
 ```
 

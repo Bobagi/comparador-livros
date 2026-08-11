@@ -1,6 +1,5 @@
-// Gerado por scripts/build-extension.py. Nao editar o zip a mao.
+// Sem segredo nenhum aqui: a extensao se registra no backend no primeiro uso
+// (POST /api/installs) e guarda o token proprio no chrome.storage.local.
 export const CONFIG = {
   backend: 'https://livros.bobagi.space',
-  key: '__LIVROS_KEY__',
-  version: '0.1.0',
 };

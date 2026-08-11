@@ -1,9 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Livros Bobagi - Coletor",
-  "version": "0.1.0",
-  "description": "Coleta ofertas de livros nas lojas a partir do SEU navegador, a pedido de livros.bobagi.space. Nao le sua navegacao.",
-  "permissions": ["offscreen", "tabs", "storage"],
+  "version": "0.2.0",
+  "description": "Busca ofertas de livros nas lojas brasileiras a partir do seu navegador, a pedido de livros.bobagi.space. Nao le sua navegacao.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["offscreen", "storage", "scripting"],
   "host_permissions": [
     "https://livros.bobagi.space/*",
     "https://*.mercadolivre.com.br/*",
@@ -18,18 +25,6 @@
     {
       "matches": ["https://livros.bobagi.space/*"],
       "js": ["bridge.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://*.mercadolivre.com.br/*",
-        "https://*.amazon.com.br/*",
-        "https://*.estantevirtual.com.br/*",
-        "https://*.olx.com.br/*",
-        "https://*.enjoei.com.br/*",
-        "https://*.shopee.com.br/*"
-      ],
-      "js": ["scraper.js"],
       "run_at": "document_idle"
     }
   ]

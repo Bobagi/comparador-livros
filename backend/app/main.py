@@ -11,13 +11,14 @@ import hmac
 import json
 import mimetypes
 import os
+import secrets
 
 mimetypes.add_type("font/woff2", ".woff2")
 import re
 import sqlite3
 import time
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 
 import httpx
@@ -39,6 +40,14 @@ CACHE_TTL_S = 6 * 3600
 SEARCH_TIMEOUT_S = 150
 MAX_SAMPLES = 60
 
+# Coletores publicados (Chrome Web Store) se registram sozinhos: o pacote da
+# loja nao pode carregar segredo nenhum. O registro e aberto, entao os tetos
+# abaixo sao o controle de abuso.
+INSTALLS_PER_IP_PER_DAY = 20
+POSTS_PER_WINDOW = 80          # envios de resultado por instalacao por janela
+POST_WINDOW_S = 600            # (uma busca = 6 envios; ~13 buscas/10min)
+RESULTS_MAX_AGE_S = 15 * 60    # busca velha nao aceita mais resultado
+
 STATUS_VALUES = {"ok", "empty", "blocked", "error"}
 
 
@@ -48,6 +57,27 @@ def db() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=5000")
     return conn
+
+
+@contextmanager
+def db_write():
+    """Transacao de ESCRITA atomica: BEGIN IMMEDIATE pega o lock de escrita ja
+    na abertura, entao um check-then-act (contar+inserir, ler+atualizar) roda
+    serializado; concorrentes bloqueiam ate o commit (SQLite nao tem advisory
+    lock). Sem isso, uma rajada le o mesmo estado velho e todos passam do teto."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.isolation_level = None  # controle manual da transacao
+    conn.execute("PRAGMA busy_timeout=8000")
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        yield conn
+        conn.execute("COMMIT")
+    except BaseException:
+        conn.execute("ROLLBACK")
+        raise
+    finally:
+        conn.close()
 
 
 def init_db() -> None:
@@ -90,19 +120,28 @@ def init_db() -> None:
                 created_at INTEGER NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_offers_search ON offers(search_id);
+            CREATE TABLE IF NOT EXISTS installs(
+                id TEXT PRIMARY KEY,
+                token_hash TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                last_seen INTEGER,
+                reg_ip TEXT,
+                posts INTEGER NOT NULL DEFAULT 0,
+                window_start INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_installs_ip ON installs(reg_ip, created_at);
             """
         )
 
 
 INDEX_HTML = ""
+PRIV_HTML = ""
 
 
-def build_index() -> None:
+def stamp_assets(html: str) -> str:
     """Carimba as URLs de asset com hash do conteudo: a zona e proxied e o
     Cloudflare cacheia .js/.css/.zip por 4h; sem o carimbo, deploy novo serve
     arquivo velho (armadilha documentada do box)."""
-    global INDEX_HTML
-    html = (STATIC_DIR / "index.html").read_text()
     stamps = {
         "/static/style.css": STATIC_DIR / "style.css",
         "/static/app.js": STATIC_DIR / "app.js",
@@ -113,7 +152,14 @@ def build_index() -> None:
         if path.exists():
             h = hashlib.sha256(path.read_bytes()).hexdigest()[:10]
             html = html.replace(url, f"{url}?v={h}")
-    INDEX_HTML = html
+    return html
+
+
+def build_index() -> None:
+    global INDEX_HTML, PRIV_HTML
+    INDEX_HTML = stamp_assets((STATIC_DIR / "index.html").read_text())
+    priv = STATIC_DIR / "privacidade.html"
+    PRIV_HTML = stamp_assets(priv.read_text()) if priv.exists() else ""
 
 
 @asynccontextmanager
@@ -128,13 +174,35 @@ app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"chrome-extension://.*|https://livros\.bobagi\.space",
     allow_methods=["GET", "POST"],
-    allow_headers=["content-type", "x-livros-key"],
+    allow_headers=["content-type", "x-livros-key", "x-livros-install"],
 )
 
 
-def require_key(x_livros_key: str | None) -> None:
-    if not LIVROS_KEY or not x_livros_key or not hmac.compare_digest(x_livros_key, LIVROS_KEY):
-        raise HTTPException(401, "chave invalida")
+def require_collector(conn: sqlite3.Connection, install_id: str | None, key: str | None) -> None:
+    """Autentica um envio de resultados. Dois caminhos: instalacao registrada
+    (id + token proprio, com rate limit por instalacao) ou a chave master do
+    .env (dev local/curl). Token nunca e guardado em claro, so o sha256."""
+    if not key:
+        raise HTTPException(401, "sem credencial")
+    now = int(time.time())
+    if install_id:
+        row = conn.execute("SELECT * FROM installs WHERE id=?", (install_id,)).fetchone()
+        given = hashlib.sha256(key.encode()).hexdigest()
+        if not row or not hmac.compare_digest(given, row["token_hash"]):
+            raise HTTPException(401, "credencial invalida")
+        window_start, posts = row["window_start"], row["posts"]
+        if now - window_start >= POST_WINDOW_S:
+            window_start, posts = now, 0
+        if posts >= POSTS_PER_WINDOW:
+            raise HTTPException(429, "limite de envios desta instalacao; aguarde uns minutos")
+        conn.execute(
+            "UPDATE installs SET posts=?, window_start=?, last_seen=? WHERE id=?",
+            (posts + 1, window_start, now, install_id),
+        )
+        return
+    if LIVROS_KEY and hmac.compare_digest(key, LIVROS_KEY):
+        return
+    raise HTTPException(401, "credencial invalida")
 
 
 async def openlibrary_lookup(query: str) -> dict | None:
@@ -202,6 +270,30 @@ def health():
     with db() as conn:
         conn.execute("SELECT 1")
     return {"ok": True}
+
+
+@app.post("/api/installs")
+def register_install(request: Request):
+    """Registro aberto do coletor: devolve id + token unicos da instalacao.
+    O teto por IP/dia e o freio contra registro em massa (alem do rate limit
+    do nginx em /api/)."""
+    ip = request.headers.get("x-real-ip") or (request.client.host if request.client else "?")
+    now = int(time.time())
+    # atomico: contar+inserir sob lock de escrita, senao uma rajada fura o teto
+    with db_write() as conn:
+        recent = conn.execute(
+            "SELECT COUNT(*) c FROM installs WHERE reg_ip=? AND created_at>?",
+            (ip, now - 86400),
+        ).fetchone()["c"]
+        if recent >= INSTALLS_PER_IP_PER_DAY:
+            raise HTTPException(429, "muitas instalacoes deste IP; tente de novo amanha")
+        install_id = str(uuid.uuid4())
+        token = secrets.token_urlsafe(32)
+        conn.execute(
+            "INSERT INTO installs(id, token_hash, created_at, last_seen, reg_ip) VALUES (?,?,?,?,?)",
+            (install_id, hashlib.sha256(token.encode()).hexdigest(), now, now, ip),
+        )
+    return {"id": install_id, "token": token}
 
 
 @app.post("/api/searches")
@@ -297,17 +389,26 @@ def get_search(sid: str):
 
 
 @app.post("/api/searches/{sid}/results")
-def post_results(sid: str, body: ResultsIn, x_livros_key: str | None = Header(default=None)):
-    require_key(x_livros_key)
+def post_results(
+    sid: str,
+    body: ResultsIn,
+    x_livros_key: str | None = Header(default=None),
+    x_livros_install: str | None = Header(default=None),
+):
     if body.store not in M.STORES:
         raise HTTPException(400, "loja desconhecida")
     if body.status not in STATUS_VALUES:
         raise HTTPException(400, "status invalido")
     now = int(time.time())
-    with db() as conn:
+    # db_write(): a leitura+atualizacao do contador de rate limit da instalacao
+    # e o DELETE+INSERT das ofertas rodam na MESMA transacao atomica
+    with db_write() as conn:
+        require_collector(conn, x_livros_install, x_livros_key)
         s = conn.execute("SELECT * FROM searches WHERE id=?", (sid,)).fetchone()
         if not s:
             raise HTTPException(404, "busca nao encontrada")
+        if now - s["created_at"] > RESULTS_MAX_AGE_S:
+            raise HTTPException(410, "busca velha demais para receber resultados")
         author_tokens = (s["canonical_author"] or "").split() or None
 
         accepted = 0
@@ -368,6 +469,13 @@ def ext_zip():
 @app.get("/")
 def index():
     return HTMLResponse(INDEX_HTML)
+
+
+@app.get("/privacidade")
+def privacidade():
+    if not PRIV_HTML:
+        raise HTTPException(404, "nao encontrado")
+    return HTMLResponse(PRIV_HTML)
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

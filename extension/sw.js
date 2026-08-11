@@ -11,6 +11,27 @@ const CAPTCHA_RE = /captcha|hcaptcha|recaptcha|shieldsquare|perfdrive|robot chec
 const queue = [];
 let running = false;
 
+// Credencial propria da instalacao: registrada no primeiro uso (o pacote da
+// loja nao carrega segredo nenhum) e guardada no storage local.
+async function getAuth(forceNew = false) {
+  if (!forceNew) {
+    const st = await chrome.storage.local.get(['installId', 'installToken']);
+    if (st.installId && st.installToken) return { id: st.installId, token: st.installToken };
+  }
+  try {
+    const r = await fetch(`${CONFIG.backend}/api/installs`, { method: 'POST' });
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (!data || !data.id || !data.token) return null;
+    await chrome.storage.local.set({ installId: data.id, installToken: data.token });
+    return { id: data.id, token: data.token };
+  } catch {
+    return null;
+  }
+}
+
+chrome.runtime.onInstalled.addListener(() => { getAuth().catch(() => {}); });
+
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg && msg.type === 'collect' && sender.url && sender.url.startsWith(CONFIG.backend)) {
     queue.push(msg.job);
@@ -120,9 +141,16 @@ async function tryTab(store, url) {
   try {
     tab = await chrome.tabs.create({ url, active: false });
     await waitTabComplete(tab.id, 25000);
+    // O scraper NAO e content script declarado: e injetado so nas abas que a
+    // propria extensao abre (nunca roda na navegacao normal do usuario).
+    let injected = false;
     for (let i = 0; i < 6; i++) {
       await sleep(1500);
       try {
+        if (!injected) {
+          await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scraper.js'] });
+          injected = true;
+        }
         const resp = await chrome.tabs.sendMessage(tab.id, { type: 'scrape', store, wantSample: i >= 4 });
         if (resp && resp.items && resp.items.length > 0) {
           return { status: 'ok', listings: resp.items, diag: { mode: 'tab', ...resp.diag } };
@@ -137,7 +165,8 @@ async function tryTab(store, url) {
           };
         }
       } catch {
-        // content script ainda nao pronto; tenta de novo
+        // pagina ainda carregando ou navegou (listener perdido): injeta de novo
+        injected = false;
       }
     }
     return { status: 'error', listings: [], diag: { mode: 'tab', error: 'scraper nao respondeu' } };
@@ -169,15 +198,27 @@ async function postResults(searchId, store, payload) {
     diag: payload.diag || {},
     sampleHtml: payload.status === 'ok' ? undefined : payload.sampleHtml,
   };
-  try {
-    await fetch(`${CONFIG.backend}/api/searches/${encodeURIComponent(searchId)}/results`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-livros-key': CONFIG.key },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    console.warn('livros: falha ao enviar resultados', store, e);
+  let auth = await getAuth();
+  for (let attempt = 0; attempt < 2 && auth; attempt++) {
+    try {
+      const r = await fetch(`${CONFIG.backend}/api/searches/${encodeURIComponent(searchId)}/results`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-livros-install': auth.id,
+          'x-livros-key': auth.token,
+        },
+        body: JSON.stringify(body),
+      });
+      if (r.status !== 401) return;
+      // credencial perdida no servidor: registra de novo e tenta uma vez
+      auth = await getAuth(true);
+    } catch (e) {
+      console.warn('livros: falha ao enviar resultados', store, e);
+      return;
+    }
   }
+  if (!auth) console.warn('livros: sem credencial de instalacao (backend fora do ar?)');
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
