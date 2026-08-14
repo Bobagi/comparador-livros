@@ -26,9 +26,12 @@ a{color:var(--yellow)}
 .appmark-t{font-family:var(--font-display);font-weight:800;font-size:1.05rem}
 .appmark .fine{font-family:var(--font-mono);color:var(--muted);font-size:.8rem;font-weight:400}
 #ext-chip{margin-left:auto}
-.chip{font-family:var(--font-mono);font-size:.75rem;padding:.2rem .55rem;border:1px solid var(--line-strong);border-radius:999px;color:var(--muted)}
+.chip{font-family:var(--font-mono);font-size:.75rem;padding:.1rem .7rem;border:1px solid var(--line-strong);border-radius:999px;color:var(--muted);display:inline-flex;align-items:center;min-height:26px}
 .chip-on{color:var(--ok);border-color:var(--ok)}
 .chip-off{color:var(--warn);border-color:var(--warn)}
+.chip a{color:inherit;text-decoration:underline;text-underline-offset:2px;display:inline-flex;align-items:center;min-height:24px}
+.cta{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;background:var(--yellow);color:#14121c;font-family:var(--font-display);font-weight:800;border-radius:10px;padding:.6rem 1.3rem;text-decoration:none;margin:.5rem 0 .3rem}
+.cta:hover{filter:brightness(1.06)}
 .wrap{width:min(1020px,100%);margin:0 auto;padding:1.4rem 1.2rem 3rem;flex:1}
 .hero h1{font-family:var(--font-display);font-weight:800;font-size:clamp(1.5rem,4vw,2.3rem);line-height:1.15}
 .sub{color:var(--muted);margin:.6rem 0 1.1rem;max-width:62ch}

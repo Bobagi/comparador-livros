@@ -27,9 +27,21 @@
   let extReady = false;
   let pollTimer = null;
 
+  const STORE_URL = 'https://chromewebstore.google.com/detail/farolivro/jnkjabpgnocifbnnceoepijbcggmkkek';
+
   function setExt(ready, version) {
     extReady = ready;
-    extChip.textContent = ready ? `Farolivro conectado v${version}` : 'Farolivro: nao instalado';
+    extChip.replaceChildren();
+    if (ready) {
+      extChip.textContent = `Farolivro conectado v${version}`;
+    } else {
+      const a = document.createElement('a');
+      a.href = STORE_URL;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = 'Instalar o Farolivro';
+      extChip.appendChild(a);
+    }
     extChip.classList.toggle('chip-on', ready);
     extChip.classList.toggle('chip-off', !ready);
     extPanel.hidden = ready;
