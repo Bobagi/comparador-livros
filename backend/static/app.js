@@ -41,12 +41,27 @@
     let v = '?';
     try { v = JSON.parse(ev.detail || '{}').version || '?'; } catch {}
     setExt(true, v);
+    maybeRunDeepLink();
   });
   document.dispatchEvent(new CustomEvent('livros:ping'));
 
   document.querySelectorAll('.ex').forEach((b) => {
     b.addEventListener('click', () => { input.value = b.textContent; form.requestSubmit(); });
   });
+
+  // Deep-link do popup da extensao: /?q=<busca> preenche e ja fareja. Espera o
+  // coletor anunciar (ext-ready) para nao cair no aviso "instale"; se ele nao
+  // aparecer em 2.5s, submete assim mesmo (dai o proprio fluxo avisa).
+  const deepQ = (new URLSearchParams(location.search).get('q') || '').trim();
+  let deepDone = false;
+  function maybeRunDeepLink() {
+    if (deepDone || deepQ.length < 3) return;
+    deepDone = true;
+    input.value = deepQ.slice(0, 120);
+    history.replaceState(null, '', location.pathname);  // limpa o ?q da barra
+    form.requestSubmit();
+  }
+  if (deepQ) setTimeout(maybeRunDeepLink, 2500);
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();

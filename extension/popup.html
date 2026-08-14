@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{--bg:#14121c;--bg2:#1b1826;--text:#f5f1e6;--muted:#b8b2a4;--yellow:#ffd21a;--line:rgba(245,241,230,.16)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:300px;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:14px}
+  .head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+  .head svg{display:block;flex:0 0 auto}
+  .head b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.45;margin-bottom:12px}
+  form{display:flex;gap:7px}
+  input{flex:1 1 auto;min-width:0;background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--text);font:inherit;font-size:13px;padding:9px 10px}
+  input:focus{outline:2px solid var(--yellow);outline-offset:1px}
+  button{cursor:pointer;font:inherit;border:0;border-radius:9px}
+  .go{background:var(--yellow);color:#14121c;font-weight:800;font-size:13px;padding:9px 13px}
+  .open{margin-top:9px;width:100%;background:transparent;border:1px solid var(--line);color:var(--text);font-size:13px;padding:9px 10px;display:flex;align-items:center;justify-content:center;gap:7px}
+  .open:hover{border-color:var(--yellow);color:var(--yellow)}
+  .foot{color:var(--muted);font-size:11px;line-height:1.4;margin-top:11px;border-top:1px solid var(--line);padding-top:9px}
+</style>
+</head>
+<body>
+  <div class="head">
+    <svg viewBox="0 0 128 128" width="30" height="30" aria-hidden="true">
+      <rect x="2" y="2" width="124" height="124" rx="28" fill="#14121c"/>
+      <g fill="none" stroke="#ffd21a" stroke-width="6" stroke-linecap="round"><path d="M98 40 q8 -7 0 -15"/><path d="M109 36 q10 -9 0 -19"/></g>
+      <path d="M64 26c-22 0-35 14-35 31c0 18 15 33 35 33c20 0 35-15 35-33c0-17-13-31-35-31z" fill="#ffd21a"/>
+      <path d="M40 48q24-13 48 0q6 3 3 13q-6 17-27 20q-21-3-27-20q-3-10 3-13z" fill="#14121c"/>
+      <ellipse cx="55" cy="49" rx="8" ry="4.5" fill="#fff" opacity="0.28" transform="rotate(-12 55 49)"/>
+      <path d="M64 84 L64 92" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+      <path d="M64 92 q-12 8 -22 1" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+      <path d="M64 92 q12 8 22 1" fill="none" stroke="#14121c" stroke-width="5" stroke-linecap="round"/>
+      <path d="M64 102c-7-5-18-6-26-3l0 19c8-3 19-2 26 3z" fill="#ffd21a"/>
+      <path d="M64 102c7-5 18-6 26-3l0 19c-8-3-19-2-26 3z" fill="#ffd21a"/>
+    </svg>
+    <b>Farolivro</b>
+  </div>
+  <p class="sub">Digite um livro e eu abro o comparativo de precos (novos e usados) ja farejando.</p>
+  <form id="f">
+    <input id="q" type="search" required minlength="3" maxlength="120" placeholder="titulo, autor ou ISBN" autofocus>
+    <button class="go" type="submit">Farejar</button>
+  </form>
+  <button class="open" id="open" type="button">Abrir o Farolivro</button>
+  <p class="foot">Compara novos e usados em varias lojas, a partir do seu navegador. So age quando voce pede.</p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

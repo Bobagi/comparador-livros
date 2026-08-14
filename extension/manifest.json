@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Farolivro",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Fareje o menor preco de um livro, novo ou usado, em varias lojas de uma vez. Nao le sua navegacao.",
   "minimum_chrome_version": "116",
   "icons": {
@@ -10,8 +10,14 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Farolivro - buscar livro",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png" }
+  },
   "permissions": ["offscreen", "storage", "scripting"],
   "host_permissions": [
+    "https://farolivro.bobagi.space/*",
     "https://livros.bobagi.space/*",
     "https://*.mercadolivre.com.br/*",
     "https://*.amazon.com.br/*",
@@ -23,7 +29,7 @@
   "background": { "service_worker": "sw.js", "type": "module" },
   "content_scripts": [
     {
-      "matches": ["https://livros.bobagi.space/*"],
+      "matches": ["https://farolivro.bobagi.space/*", "https://livros.bobagi.space/*"],
       "js": ["bridge.js"],
       "run_at": "document_idle"
     }

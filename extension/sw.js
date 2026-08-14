@@ -3,6 +3,7 @@
 // bruto ao backend e, quando um parser falha, envia amostra do HTML para
 // calibracao. Nunca age sem um pedido explicito da pagina.
 import { CONFIG } from './config.js';
+import { pageAllowed } from './urls.js';
 
 const STORES = ['mercadolivre', 'amazon', 'estantevirtual', 'olx', 'enjoei', 'shopee'];
 const TAB_ONLY = new Set(['enjoei', 'shopee']);
@@ -32,8 +33,10 @@ async function getAuth(forceNew = false) {
 
 chrome.runtime.onInstalled.addListener(() => { getAuth().catch(() => {}); });
 
+const PAGE_HOSTS = CONFIG.pageHosts || [CONFIG.backend];
+
 chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg && msg.type === 'collect' && sender.url && sender.url.startsWith(CONFIG.backend)) {
+  if (msg && msg.type === 'collect' && pageAllowed(PAGE_HOSTS, sender.url)) {
     queue.push(msg.job);
     runQueue();
   }

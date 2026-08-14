@@ -4,30 +4,30 @@ Tudo que o formulario da loja pede, pronto para colar. O pacote a enviar e o
 `backend/static/ext/livros-coletor.zip` (gerado por `scripts/build-extension.py`,
 sem segredo nenhum dentro; e o mesmo zip servido no site).
 
-> **★ REJEICAO da v0.2.0 (2026-08-11) e como este kit corrige:** a v0.2.0 ("Livros
-> Bobagi - Coletor") foi **rejeitada por "Spam de palavra-chave"** (ref. `Yellow
-> Argon`): a Chrome Web Store marcou a **lista das seis lojas** na descricao
-> ("Mercado Livre, Amazon.com.br, Estante Virtual, OLX, Enjoei e Shopee") como
-> palavras-chave excessivas/irrelevantes de marcas de 3os. **A descricao abaixo ja
-> foi corrigida** (nao enumera as marcas; descreve a funcao de forma generica). A
-> revisao terminou (como rejeicao), entao **agora e a hora de subir a v0.3.0
-> Farolivro** com esta descricao nova - resolve o rebrand e a rejeicao de uma vez.
-> NAO use "Contestar": corrigir o texto e reenviar aprova mais rapido. Regra
-> duravel: na ficha da CWS, **nao liste nomes de lojas/marcas de 3os** (isso conta
-> como keyword spam); a lista das lojas suportadas fica no site, nao na ficha.
+> **★ ESTADO (2026-08-14):** a **v0.3.0 Farolivro esta APROVADA e no ar**
+> (`chromewebstore.google.com/detail/farolivro/jnkjabpgnocifbnnceoepijbcggmkkek`).
+> Este kit agora e da **v0.4.0**, uma ATUALIZACAO com: (a) **popup na barra**
+> (botao "Farejar" + "Abrir o Farolivro"), para o usuario iniciar a busca sem
+> ter o site aberto; (b) **migracao de dominio** para `farolivro.bobagi.space`
+> (o antigo `livros.bobagi.space` segue valido, por isso os DOIS hosts estao nas
+> permissoes). Nenhuma permissao sensivel nova (o `action`/popup nao e permissao;
+> `scripting`/`storage`/`offscreen` inalterados). **Historico:** a v0.2.0 ("Livros
+> Bobagi - Coletor") foi rejeitada por "Spam de palavra-chave" (listava as seis
+> lojas por nome na descricao). **Regra duravel que continua valendo: NAO liste
+> nomes de lojas/marcas de 3os na ficha** (keyword spam); a lista fica no site.
 
-## Passos da conta (so o dono faz, ~10 min + US$ 5 uma vez)
+## Passos (atualizacao de item ja aprovado; ~5 min)
 
-1. Entrar em https://chrome.google.com/webstore/devconsole com a conta Google.
-2. Pagar a taxa unica de registro de desenvolvedor (US$ 5).
-3. Confirmar o e-mail de contato do desenvolvedor (a loja manda um link).
-4. Na aba Conta, declarar-se **nao comerciante** (non-trader; projeto pessoal
-   gratuito, sem transacao). Exigencia europeia (DSA), aparece no formulario.
-5. "Novo item" -> enviar o `livros-coletor.zip` -> preencher com o conteudo
-   abaixo -> "Enviar para revisao".
+1. Entrar em https://chrome.google.com/webstore/devconsole com a conta Google
+   (a taxa de US$ 5 e o e-mail de contato ja foram feitos na 1a publicacao).
+2. Abrir o item **Farolivro** -> **Pacote -> Enviar novo pacote** ->
+   `backend/static/ext/livros-coletor.zip` (ja e a v0.4.0, com o popup).
+3. **Ficha da loja:** conferir que a Descricao e a de baixo (sem nomes de loja) e
+   trocar os screenshots pelos de `docs/cws/` se quiser mostrar o popup.
+4. **Salvar -> Enviar para revisao.** Quem ja tem a v0.3.0 recebe a v0.4.0 sozinho.
 
-Revisao tipica: 1 a 3 dias (pode demorar mais por causa das permissoes de host).
-Cada atualizacao futura passa por revisao de novo, quase sempre mais rapida.
+Revisao tipica: 1 a 3 dias. Uma versao nova com host novo (`farolivro`) pode
+demorar um pouco mais por reavaliarem as permissoes de host.
 
 ## Ficha (aba "Detalhes do item")
 
@@ -40,7 +40,7 @@ Cada atualizacao futura passa por revisao de novo, quase sempre mais rapida.
 ```
 Farolivro fareja o menor preco de um livro, NOVO ou USADO, comparando varios
 marketplaces brasileiros de uma vez, sem voce abrir site por site. E o
-companheiro do site livros.bobagi.space, onde os resultados aparecem lado a
+companheiro do site farolivro.bobagi.space, onde os resultados aparecem lado a
 lado, agrupados por novo e usado.
 
 Por que uma extensao? Muitos sites bloqueiam buscas automatizadas vindas de
@@ -50,9 +50,10 @@ para o comparativo.
 
 Como usar:
 1. Instale o Farolivro.
-2. Abra livros.bobagi.space (o indicador "Farolivro conectado" acende).
-3. Busque por titulo, autor ou ISBN e veja as ofertas agrupadas em novo e
-   usado, com o status honesto de cada fonte.
+2. Clique no icone do Farolivro na barra do navegador, digite um livro e ele
+   abre o comparativo ja farejando (ou abra farolivro.bobagi.space direto).
+3. Veja as ofertas agrupadas em novo e usado, com o status honesto de cada
+   fonte.
 
 Privacidade, direto ao ponto:
 - So age quando VOCE pede uma busca no site. Nunca roda nas paginas que voce
@@ -62,14 +63,14 @@ Privacidade, direto ao ponto:
 - Sem anuncios, sem rastreadores, codigo aberto:
   https://github.com/Bobagi/comparador-livros
 
-Politica de privacidade: https://livros.bobagi.space/privacidade
+Politica de privacidade: https://farolivro.bobagi.space/privacidade
 Projeto pessoal, sem afiliacao com nenhuma loja.
 ```
 
 - **Icone da loja (128x128):** `docs/cws/icon128.png` (focinho Farolivro)
 - **Screenshots (1280x800):** `docs/cws/screenshot-1-home.png` e
   `docs/cws/screenshot-2-resultados.png`
-- **Site oficial:** `https://livros.bobagi.space`
+- **Site oficial:** `https://farolivro.bobagi.space`
 
 ## Aba "Praticas de privacidade"
 
@@ -77,7 +78,7 @@ Projeto pessoal, sem afiliacao com nenhuma loja.
 
 ```
 Comparar precos de livros: quando o usuario pede uma busca no site
-livros.bobagi.space, o Farolivro consulta as paginas publicas de resultado de
+farolivro.bobagi.space, o Farolivro consulta as paginas publicas de resultado de
 busca de seis lojas brasileiras e envia os anuncios encontrados (titulo,
 preco, link) ao site, que monta o comparativo. Nada roda sem pedido do
 usuario.
@@ -87,7 +88,7 @@ usuario.
   - `offscreen`: "Interpretar (DOMParser) o HTML das paginas de busca das lojas; o service worker MV3 nao tem DOM."
   - `storage`: "Guardar o identificador aleatorio de instalacao que autentica os envios ao backend. Nenhum dado pessoal."
   - `scripting`: "Injetar o leitor de pagina somente nas abas que a propria extensao abre (lojas que exigem renderizacao). Nunca roda nas abas do usuario."
-  - **Permissoes de host** (uma justificativa geral): "As seis lojas: buscar a pagina publica de resultados a pedido do usuario. livros.bobagi.space: receber o pedido de busca e devolver os resultados. O Farolivro so age apos um pedido explicito do usuario no site."
+  - **Permissoes de host** (uma justificativa geral): "As seis lojas: buscar a pagina publica de resultados a pedido do usuario. farolivro.bobagi.space (e livros.bobagi.space, o dominio anterior do mesmo produto, mantido durante a migracao): receber o pedido de busca e devolver os resultados. O Farolivro so age apos um pedido explicito do usuario no site."
 - **Uso de codigo remoto:** Nao.
 - **Dados de usuario coletados:** marcar somente **"Conteudo do site"**
   (website content) - conteudo das paginas publicas de resultado de busca das
@@ -96,7 +97,7 @@ usuario.
   historico, atividade do usuario): NAO.
 - **Certificacoes** (as 3 caixas): nao vendemos dados; uso restrito a
   finalidade unica; nada de creditworthiness. Marcar as tres.
-- **URL da politica de privacidade:** `https://livros.bobagi.space/privacidade`
+- **URL da politica de privacidade:** `https://farolivro.bobagi.space/privacidade`
 
 ## Aba "Distribuicao"
 
