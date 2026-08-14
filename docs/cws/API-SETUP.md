@@ -70,7 +70,25 @@ python3 scripts/cws.py upload-publish backend/static/ext/livros-coletor.zip
 Isso sobe a v0.4.0 e envia pra revisao. Dai em diante, toda versao nova eu subo
 e publico por aqui, sem voce abrir o painel.
 
-## Nota de validade
+## O access token NAO importa; o refresh token e tudo
+
+O `cws.py` usa o **refresh token** (em `cws-token.json`) para gerar um access
+token fresco a cada execucao. O access token (`ya29...`) do Playground e
+descartavel (~1h) e nunca e usado aqui - nao precisa capturar nem colar de novo.
+O checkbox "Auto-refresh the token" e o botao "Refresh access token" do Playground
+sao so conveniencia da pagina; nao afetam o refresh token guardado.
+
+## ★ Para o refresh token NAO expirar em 7 dias: publicar o app OAuth
+
+Se a **Tela de permissao OAuth** (GCP -> APIs e servicos -> Tela de permissao
+OAuth / "Publico-alvo") estiver em **"Testando"**, o Google expira o refresh
+token em **7 dias** (mesma pegadinha do AdMob). Solucao permanente: clicar em
+**"PUBLICAR APP"** (status -> "Em producao"). Nao precisa de verificacao do
+Google para uso proprio (o aviso "app nao verificado" e inofensivo aqui). Se
+ficar em "Testando" e o token morrer, e so refazer o passo 3 do Playground uma
+vez e me mandar o novo refresh token.
+
+## Nota de validade da API
 
 A API v1.1 usada pelo `cws.py` funciona **ate 2026-10-15**; depois disso o Google
 exige a v2. Quando chegar perto, eu migro o script (os endpoints mudam, a ideia e
