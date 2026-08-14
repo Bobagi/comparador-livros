@@ -1,5 +1,9 @@
 # Publicar o Farolivro por API (Chrome Web Store API) - setup unico
 
+> **STATUS (2026-08-14): CONFIGURADO E FUNCIONANDO.** As credenciais ja estao no box
+> e a v0.4.0 foi publicada por API (`upload` + `publish` -> OK, em revisao). As proximas
+> versoes o Claude sobe com `python3 scripts/cws.py upload-publish <zip>`.
+
 Objetivo: deixar o Claude subir novas versoes da extensao e publicar sozinho
 (`scripts/cws.py`), do mesmo jeito que ja faz com a Play Store (Tic Tac Verse).
 
