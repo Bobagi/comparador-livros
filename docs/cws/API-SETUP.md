@@ -21,12 +21,16 @@ Precisa ser feito com a **mesma conta que e dona da extensao** (gustavoperin067)
    **"Chrome Web Store API"** -> Ativar. (Pode ser no mesmo projeto do OAuth do
    AdMob, tanto faz.)
 
-2. **Criar um OAuth client "Aplicativo da Web"** (o do AdMob e "Desktop" e nao
-   serve para o passo do Playground): "APIs e servicos" -> "Credenciais" ->
-   "Criar credenciais" -> "ID do cliente OAuth" -> tipo **Aplicativo da Web** ->
-   em "URIs de redirecionamento autorizados" adicione exatamente:
-   `https://developers.google.com/oauthplayground` -> Criar. Anote o
+2. **Criar um OAuth client "Aplicativo da Web".** "APIs e servicos" ->
+   "Credenciais" -> "Criar credenciais" -> "ID do cliente OAuth" -> tipo
+   **Aplicativo da Web** -> em "URIs de redirecionamento autorizados" adicione
+   exatamente `https://developers.google.com/oauthplayground` -> Criar. Anote o
    **client_id** e o **client_secret**.
+   > ⚠️ **NAO escolha "Extensao do Chrome"** (parece o certo, mas NAO e): esse
+   > tipo pede um "ID do item" e serve para uma extensao autenticar usuarios em
+   > APIs do Google de dentro dela, nao para publicar na loja. So o
+   > **"Aplicativo da Web"** aceita a URI de redirecionamento do Playground. O
+   > client "Desktop" do AdMob tambem nao serve aqui (sem redirect do Playground).
 
 3. **Pegar o refresh token** no OAuth Playground:
    - Abra https://developers.google.com/oauthplayground
