@@ -4,7 +4,6 @@
   'use strict';
 
   const PRICE_RE = /R\$\s?\d[\d.\s]*(?:,\d{2})?/;
-  const CAPTCHA_RE = /captcha|hcaptcha|recaptcha|shieldsquare|perfdrive|robot check|algo deu errado/i;
 
   const HREF_PATTERNS = {
     mercadolivre: /MLB-?\d{6,}|\/p\/MLB\d+|\/up\/MLBU\d+/,
@@ -17,19 +16,29 @@
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || msg.type !== 'scrape') return;
-    const items = extract(HREF_PATTERNS[msg.store]);
-    const htmlHead = document.documentElement.outerHTML.slice(0, 60000);
+    const outerHtml = document.documentElement.outerHTML;
+    let items = extract(HREF_PATTERNS[msg.store]);
+    let parser = 'anchors';
+    if (items.length === 0 && typeof FaroParsers !== 'undefined') {
+      // Cards sem <a href> (EV) ou SPA presa na tela de loading em aba de
+      // fundo (ML): os dados ja estao nos <script> do proprio DOM.
+      items = FaroParsers.storeItems(msg.store, outerHtml);
+      parser = 'json';
+    }
     const resp = {
       items,
       diag: {
         docTitle: document.title.slice(0, 120),
         ready: document.readyState,
-        captcha: CAPTCHA_RE.test(htmlHead),
+        captcha: typeof FaroParsers !== 'undefined' && FaroParsers.looksBlocked(outerHtml),
         anchors: document.querySelectorAll('a[href]').length,
+        tabParser: parser,
       },
     };
     if (msg.wantSample && items.length === 0) {
-      resp.sample = document.documentElement.outerHTML.slice(0, 150000);
+      resp.sample = typeof FaroParsers !== 'undefined'
+        ? FaroParsers.buildSample(outerHtml)
+        : outerHtml.slice(0, 150000);
     }
     sendResponse(resp);
   });

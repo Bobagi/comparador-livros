@@ -15,7 +15,11 @@ OUT = ROOT / "backend" / "static" / "ext" / "livros-coletor.zip"
 
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    files = sorted(p for p in EXT.rglob("*") if p.is_file())
+    # test/ e fixtures ficam fora do pacote da loja (so codigo que roda no Chrome)
+    files = sorted(
+        p for p in EXT.rglob("*")
+        if p.is_file() and "test" not in p.relative_to(EXT).parts and not p.name.startswith(".")
+    )
     # Arquivos na RAIZ do zip (sem pasta interna): o "Extrair tudo" do Windows
     # ja cria uma pasta com o nome do zip; se o zip tambem tivesse uma pasta
     # dentro, viraria livros-coletor/livros-coletor/manifest.json e o Chrome

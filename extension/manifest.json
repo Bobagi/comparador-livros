@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Farolivro",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Fareje o menor preco de um livro, novo ou usado, em varias lojas de uma vez. Nao le sua navegacao.",
   "minimum_chrome_version": "116",
   "icons": {

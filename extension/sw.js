@@ -4,10 +4,10 @@
 // calibracao. Nunca age sem um pedido explicito da pagina.
 import { CONFIG } from './config.js';
 import { pageAllowed } from './urls.js';
+import './parsers.js'; // classic script: registra self.FaroParsers
 
 const STORES = ['mercadolivre', 'amazon', 'estantevirtual', 'olx', 'enjoei', 'shopee'];
 const TAB_ONLY = new Set(['enjoei', 'shopee']);
-const CAPTCHA_RE = /captcha|hcaptcha|recaptcha|shieldsquare|perfdrive|robot check|are you a robot|algo deu errado/i;
 
 const queue = [];
 let running = false;
@@ -88,12 +88,15 @@ async function collectStore(store, query) {
   const url = searchUrl(store, query);
   if (!TAB_ONLY.has(store)) {
     const viaFetch = await tryFetch(store, url);
-    if (viaFetch.status === 'ok' || viaFetch.status === 'blocked') return viaFetch;
-    // fetch nao rendeu (SPA ou parser falhou): tenta aba de fundo antes de desistir
+    if (viaFetch.status === 'ok') return viaFetch;
+    // fetch nao rendeu (SPA, parser falhou ou desafio anti-bot que uma aba
+    // real resolve sozinha): tenta aba de fundo antes de desistir
     const viaTab = await tryTab(store, url);
     if (viaTab.status === 'ok') return viaTab;
     viaTab.diag = { ...viaFetch.diag, fallback: true, ...viaTab.diag };
     if (!viaTab.sampleHtml) viaTab.sampleHtml = viaFetch.sampleHtml;
+    // bloqueio confirmado no fetch vence um "empty"/"error" inconclusivo da aba
+    if (viaFetch.status === 'blocked' && viaTab.status !== 'blocked') viaTab.status = 'blocked';
     return viaTab;
   }
   return tryTab(store, url);
@@ -111,14 +114,19 @@ async function tryFetch(store, url) {
     return { status: 'error', listings: [], diag: { mode: 'fetch', error: String(e).slice(0, 300) } };
   }
   const diag = { mode: 'fetch', http: resp.status, htmlLen: html.length };
-  if (resp.status === 403 || resp.status === 429 || CAPTCHA_RE.test(html.slice(0, 60000))) {
-    return { status: 'blocked', listings: [], diag: { ...diag, captcha: true }, sampleHtml: html.slice(0, 150000) };
-  }
+  // Primeiro tenta extrair: pagina com anuncios parseados e OK mesmo que
+  // carregue a biblioteca de um captcha (o ML faz isso em toda pagina).
   const parsed = await parseInOffscreen(store, html, url);
   if (parsed.items.length > 0) {
     return { status: 'ok', listings: parsed.items, diag: { ...diag, ...parsed.diag } };
   }
-  return { status: 'empty', listings: [], diag: { ...diag, ...parsed.diag }, sampleHtml: html.slice(0, 150000) };
+  const blocked = resp.status === 403 || resp.status === 429 || self.FaroParsers.looksBlocked(html);
+  return {
+    status: blocked ? 'blocked' : 'empty',
+    listings: [],
+    diag: { ...diag, ...parsed.diag, captcha: blocked },
+    sampleHtml: self.FaroParsers.buildSample(html),
+  };
 }
 
 let offscreenReady = false;
@@ -151,7 +159,7 @@ async function tryTab(store, url) {
       await sleep(1500);
       try {
         if (!injected) {
-          await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['scraper.js'] });
+          await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['parsers.js', 'scraper.js'] });
           injected = true;
         }
         const resp = await chrome.tabs.sendMessage(tab.id, { type: 'scrape', store, wantSample: i >= 4 });

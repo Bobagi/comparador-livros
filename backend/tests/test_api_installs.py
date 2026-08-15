@@ -150,3 +150,15 @@ def test_busca_velha_nao_aceita_resultado(api):
         )
     r = post_results(client, sid, {"x-livros-install": cred["id"], "x-livros-key": cred["token"]})
     assert r.status_code == 410
+
+
+def test_amostra_salva_redige_email(api):
+    """Pagina de loja logada carrega o e-mail do proprio usuario; a amostra
+    gravada em disco nao pode guardar isso."""
+    m, client = api
+    m.save_sample("mercadolivre", "livro teste", '<html>"email": "fulano.tal+x@gmail.com"</html>')
+    files = list(m.SAMPLES_DIR.glob("mercadolivre-livro-teste-*.html"))
+    assert files, "amostra nao foi gravada"
+    body = files[-1].read_text()
+    assert "fulano.tal+x@gmail.com" not in body
+    assert "***@***" in body

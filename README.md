@@ -74,7 +74,13 @@ docker compose up -d --build
 
 # 3. testes (matching + autenticação da ingestão)
 docker compose run --rm --no-deps web python -m pytest tests/
+
+# 3b. testes dos parsers da extensão (JS puro, sem DOM)
+node --test extension/test/parsers.test.mjs extension/test/urls.test.mjs
 ```
+
+> Rode os arquivos de teste **explicitamente** (não `node --test extension/test/`): no Node 22
+> o modo diretório trata `test/` como um módulo e falha. Precisa de Node ≥ 20 (`/opt/node-v22/bin`).
 
 O site fica em `http://127.0.0.1:3065`. Baixe a extensão pelo link da própria página
 (`/ext/livros-coletor.zip`), extraia, e carregue em `chrome://extensions` com o Modo do
@@ -101,6 +107,9 @@ backend/
   tests/             suíte de matching com anúncios reais
   static/            o site (HTML/CSS/JS puro, zero framework)
 extension/           a extensão MV3 (service worker + offscreen parser + content scripts)
+  parsers.js         parsers PUROS por loja (JSON-LD da EV, estado da SPA do ML) + deteção
+                     de bloqueio + amostragem; roda no offscreen, na aba e em node --test
+  test/              testes dos parsers e da montagem de URL (node --test, com fixtures reais)
 scripts/build-extension.py   empacota a extensão (zip idêntico ao da Chrome Web Store)
 fase0/               a pesquisa de validação (ofertas reais + o dataset de ruído)
 ```

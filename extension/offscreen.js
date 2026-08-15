@@ -4,7 +4,6 @@
   'use strict';
 
   const PRICE_RE = /R\$\s?\d[\d.\s]*(?:,\d{2})?/;
-  const CAPTCHA_RE = /captcha|hcaptcha|recaptcha|shieldsquare|perfdrive|robot check|algo deu errado/i;
 
   const HREF_PATTERNS = {
     mercadolivre: /MLB-?\d{6,}|\/p\/MLB\d+|\/up\/MLBU\d+/,
@@ -28,7 +27,7 @@
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const diag = {
       docTitle: (doc.title || '').slice(0, 120),
-      captcha: CAPTCHA_RE.test(html.slice(0, 60000)),
+      captcha: FaroParsers.looksBlocked(html),
     };
     let items = [];
     let parser = 'generic';
@@ -39,6 +38,12 @@
       else if (store === 'estantevirtual') { items = parseEV(doc, base); parser = 'ev'; }
     } catch (e) {
       diag.parserError = String(e).slice(0, 200);
+    }
+    if (items.length === 0) {
+      // Lojas que embutem os anuncios em JSON (EV: JSON-LD; ML: estado da SPA)
+      // em vez de expor <a href> no markup.
+      items = FaroParsers.storeItems(store, html);
+      if (items.length > 0) parser = parser + '+json';
     }
     if (items.length === 0) {
       items = generic(doc, base, HREF_PATTERNS[store]);

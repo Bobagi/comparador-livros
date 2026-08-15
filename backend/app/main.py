@@ -452,7 +452,10 @@ def post_results(
 def save_sample(store: str, query: str, html: str) -> None:
     safe_q = re.sub(r"[^a-z0-9]+", "-", M.norm(query))[:40]
     path = SAMPLES_DIR / f"{store}-{safe_q}-{int(time.time())}.html"
-    path.write_text(html[:200_000], errors="replace")
+    # pagina de loja logada carrega o e-mail do proprio usuario (ex.: script
+    # de conta do ML); amostra e para calibrar parser, nao precisa disso
+    html = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "***@***", html[:200_000])
+    path.write_text(html, errors="replace")
     files = sorted(SAMPLES_DIR.glob("*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
     for old in files[MAX_SAMPLES:]:
         old.unlink(missing_ok=True)
