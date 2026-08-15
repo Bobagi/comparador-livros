@@ -103,91 +103,104 @@
 
   // --- Estado embutido do Mercado Livre (search-nordic) ---
 
+  // O frontend "search-nordic" do ML nao poe os cards no HTML: embute o estado
+  // da busca num script como `_n.ctx.s.q("0:{...}")` - a string e um JSON
+  // serializado com referencias (`@123`, refs de letra unica como `u`,
+  // `undefined`/`NaN`). Os campos que queremos (titulo/preco/url) sao LITERAIS
+  // inline, entao neutralizamos os tokens nao-JSON (viram null) e parseamos,
+  // sem reimplementar o desserializador do ML. Cada produto e um "polycard"
+  // (objeto com `components` + `metadata`).
   function mlStateItems(html) {
     const out = [];
-    for (const s of scriptsOf(html)) {
-      if (s.text.indexOf('"permalink"') === -1) continue;
-      const data = extractFirstJson(s.text);
-      if (!data) continue;
-      walkMl(data, out, 0, { nodes: 0 });
+    for (const frag of mlFragments(html)) {
+      let data;
+      try { data = JSON.parse(neutralizeRefs(frag)); } catch { continue; }
+      walkPolycards(data, out, 0, { nodes: 0 });
       if (out.length >= CAPS.items) break;
     }
     return dedupe(out).slice(0, CAPS.items);
   }
 
-  // Extrai o primeiro objeto JSON balanceado do texto do script
-  // (window.__X__ = {...}; possivelmente seguido de mais codigo).
-  function extractFirstJson(text) {
+  // Extrai o payload JSON de cada `_n.ctx.s.q("N:...")` do HTML (a string e um
+  // literal JS escapado; JSON.parse desescapa e resolve \uXXXX corretamente).
+  function mlFragments(html) {
+    const frags = [];
+    const marker = '_n.ctx.s.q("';
     let from = 0;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const start = text.indexOf('{', from);
-      if (start === -1) return null;
-      const raw = balancedSlice(text, start);
-      if (!raw) return null;
-      try { return JSON.parse(raw); } catch { from = start + 1; }
+    while (frags.length < CAPS.scripts) {
+      const at = html.indexOf(marker, from);
+      if (at === -1) break;
+      const litStart = at + marker.length - 1; // aponta pro "
+      const litEnd = endOfJsString(html, litStart);
+      from = litEnd + 1;
+      if (litEnd <= litStart || litEnd - litStart > CAPS.scriptLen) continue;
+      let s;
+      try { s = JSON.parse(html.slice(litStart, litEnd + 1)); } catch { continue; }
+      const colon = s.indexOf(':');
+      if (colon > 0 && colon < 12) frags.push(s.slice(colon + 1)); // tira o "N:"
     }
-    return null;
+    return frags;
   }
 
-  function balancedSlice(text, start) {
-    let depth = 0;
-    let inStr = false;
-    let esc = false;
-    for (let i = start; i < text.length; i++) {
+  // Fim de um literal de string JS/JSON comecando em `start` (que e a aspa
+  // de abertura), respeitando escapes.
+  function endOfJsString(text, start) {
+    for (let i = start + 1; i < text.length; i++) {
       const c = text[i];
-      if (inStr) {
-        if (esc) esc = false;
-        else if (c === '\\') esc = true;
-        else if (c === '"') inStr = false;
-        continue;
-      }
-      if (c === '"') inStr = true;
-      else if (c === '{') depth++;
-      else if (c === '}') {
-        depth--;
-        if (depth === 0) return text.slice(start, i + 1);
-      }
+      if (c === '\\') { i++; continue; }
+      if (c === '"') return i;
     }
-    return null;
+    return -1;
   }
 
-  function walkMl(node, out, depth, budget) {
+  // Troca por `null` os tokens que o ML usa e que nao sao JSON valido, so em
+  // POSICAO DE VALOR (apos `:` `,` `[`). Valores string comecam com `"` e
+  // nunca sao tocados; `true/false/null` sao preservados.
+  function neutralizeRefs(payload) {
+    return payload
+      .replace(/@\d+/g, 'null')
+      .replace(/(?<=[:,[])(?!(?:true|false|null)\b)[A-Za-z_$][\w$]*/g, 'null');
+  }
+
+  function walkPolycards(node, out, depth, budget) {
     if (!node || typeof node !== 'object') return;
     if (depth > CAPS.depth || budget.nodes++ > CAPS.nodes || out.length >= CAPS.items) return;
-    if (!Array.isArray(node)) {
-      const url = typeof node.permalink === 'string' ? node.permalink.split('#')[0] : null;
-      const title = clean(node.title || node.name);
-      if (url && /^https:\/\//.test(url) && title.length >= CAPS.titleMin) {
-        const priceText = mlPrice(node);
-        // Sem preco e sem cara de anuncio (MLB...), e link de navegacao
-        // (categoria/busca relacionada), nao produto: fica de fora.
-        if (priceText || /MLB-?\d{6,}|\/p\/MLB\d+|\/up\/MLBU\d+/.test(url)) {
-          const seller = clean(node.official_store_name || (node.seller_info && node.seller_info.name) || '');
-          out.push({ title, priceText, url, seller: seller || null, extra: null });
-        }
-      }
+    if (!Array.isArray(node) && Array.isArray(node.components) && node.metadata && typeof node.metadata === 'object') {
+      const card = readPolycard(node);
+      if (card) out.push(card);
     }
     for (const key in node) {
       if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
       const v = node[key];
-      if (v && typeof v === 'object') walkMl(v, out, depth + 1, budget);
+      if (v && typeof v === 'object') walkPolycards(v, out, depth + 1, budget);
     }
   }
 
-  function mlPrice(node) {
-    if (node.sale_price && typeof node.sale_price === 'object' && node.sale_price.amount != null) {
-      return fmtBRL(node.sale_price.amount);
+  function readPolycard(node) {
+    const md = node.metadata || {};
+    let title = null;
+    let price = null;
+    for (const c of node.components) {
+      if (!c || typeof c !== 'object') continue;
+      if (c.type === 'title' && c.title && typeof c.title.text === 'string') title = clean(c.title.text);
+      if (c.type === 'price' && c.price && c.price.current_price && price == null) price = c.price.current_price.value;
     }
-    if (typeof node.price === 'number') return fmtBRL(node.price);
-    if (node.price && typeof node.price === 'object' && node.price.amount != null) {
-      return fmtBRL(node.price.amount);
+    if (price == null && md.signal && typeof md.signal === 'object') price = md.signal.price;
+    let url = typeof md.url === 'string' ? md.url.split('#')[0] : null;
+    // so prefixa https em url "nua" (sem esquema); url com esquema :// fica como
+    // esta - assim um valor envenenado tipo "javascript:..." nao vira https falso
+    if (url && !/^[a-z][a-z0-9+.-]*:\/\//i.test(url) && !/^[a-z]+:/i.test(url)) {
+      url = 'https://' + url.replace(/^\/+/, '');
     }
-    const list = node.prices && Array.isArray(node.prices.prices) ? node.prices.prices : null;
-    if (list && list.length) {
-      const amounts = list.map((p) => p && p.amount).filter((a) => typeof a === 'number' && a > 0);
-      if (amounts.length) return fmtBRL(Math.min.apply(null, amounts));
-    }
-    return null;
+    // defesa na origem: o parser do ML so emite host do proprio ML (o backend
+    // re-checa com url_allowed, mas nao emitir lixo e o principio)
+    if (!title || title.length < CAPS.titleMin || !url ||
+        !/^https:\/\/([\w-]+\.)*mercadoli(vre|bre)\.com(\.br)?(\/|$)/i.test(url)) return null;
+    const priceText = fmtBRL(price);
+    // sem preco E sem cara de anuncio de produto (MLB...) e card de navegacao,
+    // nao oferta - fica de fora
+    if (!priceText && !/MLB-?\d{6,}|\/MLB\d+|count/.test(url)) return null;
+    return { title, priceText, url, seller: null, extra: null };
   }
 
   function dedupe(items) {
@@ -241,7 +254,7 @@
     return (head + chunks.join('')).slice(0, cap);
   }
 
-  const api = { looksBlocked, storeItems, jsonLdItems, mlStateItems, buildSample, extractFirstJson };
+  const api = { looksBlocked, storeItems, jsonLdItems, mlStateItems, buildSample, neutralizeRefs };
   root.FaroParsers = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : globalThis);

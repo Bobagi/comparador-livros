@@ -44,38 +44,55 @@ test('bloqueio: pagina da EV com resultados nao e bloqueio', () => {
   assert.equal(P.looksBlocked(fx('estantevirtual-ldjson.html')), false);
 });
 
-test('ML: estado embutido da SPA vira itens; link de navegacao sem preco fica de fora', () => {
-  const state = {
-    pageState: {
-      initialState: {
-        results: [
-          { id: 'MLB1', title: 'How to Invent Everything - Ryan North', permalink: 'https://www.mercadolivre.com.br/livro/p/MLB12345678', price: { amount: 59.9 } },
-          { id: 'MLB2', title: 'Livro usado em bom estado', permalink: 'https://produto.mercadolivre.com.br/MLB-3456789012-livro', prices: { prices: [{ amount: 80 }, { amount: 64.5 }] } },
-          { title: 'Livros, Revistas e Comics', permalink: 'https://lista.mercadolivre.com.br/livros/' },
-        ],
-      },
-    },
-  };
-  const html = '<html><head></head><body><script>window.__PRELOADED_STATE__ = '
-    + JSON.stringify(state) + ';\nfooBar();</script></body></html>';
-  const items = P.mlStateItems(html);
-  assert.equal(items.length, 2);
+test('ML: estado search-nordic real (fixture) vira itens com preco', () => {
+  // Fixture derivada do formato REAL do ML: _n.ctx.s.q("0:{...}") com refs @N,
+  // ref de letra unica (u) e NaN em posicao de valor; polycards com
+  // components[title|price] + metadata{url,signal.price}.
+  const html = fx('mercadolivre-nordic-state.html');
+  const items = P.storeItems('mercadolivre', html);
+  assert.equal(items.length, 2); // 2 produtos; o card de navegacao (sem preco/MLB) fica de fora
+  assert.equal(items[0].title, 'Livro Teste Um - Capa Dura');
+  // componente de preco (59,90) vence o signal (999) - preco exibido e o do componente
   assert.equal(items[0].priceText, 'R$ 59,90');
-  // mutation check: com lista de precos, vale o MENOR (promocional)
-  assert.equal(items[1].priceText, 'R$ 64,50');
-  assert.equal(P.storeItems('mercadolivre', html).length, 2);
+  assert.match(items[0].url, /^https:\/\/www\.mercadolivre\.com\.br\/.*\/p\/MLB111$/);
+  // card patrocinado SEM componente de preco: cai no signal.price (80); url = click-tracker do ML
+  assert.equal(items[1].priceText, 'R$ 80,00');
+  assert.match(items[1].url, /^https:\/\/click1\.mercadolivre\.com\.br\//);
 });
 
-test('ML: extractFirstJson aguenta chaves e aspas dentro de string e codigo depois', () => {
-  const text = 'var x = 1; window.__S__ = {"a":"tem { chave } e \\" aspas","permalink":"https://x.mercadolivre.com.br/MLB-1234567","title":"Titulo bom","price":10}; f();';
-  const data = P.extractFirstJson(text);
-  assert.equal(data.title, 'Titulo bom');
+test('ML: parser so emite host do ML (defesa na origem contra url envenenada no estado)', () => {
+  const mk = (url, text) => `{"polycard":{"metadata":{"url":${JSON.stringify(url)},"signal":{"price":9}},"components":[{"type":"title","title":{"text":${JSON.stringify(text)}}}]}}`;
+  const inner = '0:{"results":[' + [
+    mk('www.evil.com/p/MLB1', 'host mau'),
+    mk('javascript:alert(1)', 'js url'),
+    mk('https://www.mercadolivre.com.br.evil.com/p/MLB2', 'sufixo mau'),
+    mk('www.mercadolivre.com.br/livro/p/MLB9', 'Livro OK'),
+    mk('click1.mercadolivre.com.br/mclics/count?a=1', 'Patrocinado OK'),
+  ].join(',') + ']}';
+  const html = '<script>_n.ctx.s.q(' + JSON.stringify(inner) + ')</script>';
+  const items = P.storeItems('mercadolivre', html);
+  const urls = items.map((i) => i.url);
+  assert.equal(items.length, 2); // so os 2 de host ML valido
+  assert.ok(urls.every((u) => /^https:\/\/([\w-]+\.)*mercadoli(vre|bre)\.com/.test(u)));
+  assert.ok(!urls.some((u) => u.includes('evil.com') || u.startsWith('https://javascript')));
 });
 
-test('DoS: JSON fundo demais nao estoura a pilha (teto de profundidade)', () => {
-  let inner = '{"permalink":"https://www.mercadolivre.com.br/x/p/MLB999","title":"Fundo demais","price":1}';
+test('ML: neutralizeRefs troca so tokens em posicao de valor, nunca dentro de string', () => {
+  // @N, ref de letra, NaN viram null; strings com @/palavras ficam intactas
+  const raw = '{"a":@12,"b":u,"c":NaN,"d":"preco @promo undefined true","e":[u,@3,1],"f":true}';
+  const obj = JSON.parse(P.neutralizeRefs(raw));
+  assert.equal(obj.a, null);
+  assert.equal(obj.b, null);
+  assert.equal(obj.c, null);
+  assert.equal(obj.d, 'preco @promo undefined true'); // string preservada
+  assert.deepEqual(obj.e, [null, null, 1]);
+  assert.equal(obj.f, true); // literal true preservado
+});
+
+test('DoS: estado ML fundo demais nao estoura a pilha (teto de profundidade)', () => {
+  let inner = '{"components":[{"type":"title","title":{"text":"Fundo demais"}}],"metadata":{"url":"www.mercadolivre.com.br/p/MLB999","signal":{"price":1}}}';
   for (let i = 0; i < 2000; i++) inner = '{"k":' + inner + '}';
-  const html = '<script>window.__PRELOADED_STATE__ = ' + inner + ';</script>';
+  const html = '<script>_n.ctx.s.q(' + JSON.stringify('0:' + inner) + ')</script>';
   const items = P.mlStateItems(html); // nao pode lancar
   assert.equal(items.length, 0); // alem do teto de 14 niveis: descartado
 });
