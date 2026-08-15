@@ -9,6 +9,8 @@
   const go = $('#go');
   const extChip = $('#ext-chip');
   const extPanel = $('#ext-panel');
+  const extUpdate = $('#ext-update');
+  const extUpdateMsg = $('#ext-update-msg');
   const sniffer = $('#sniffer');
   const msg = $('#msg');
   const statusArea = $('#status-area');
@@ -45,6 +47,8 @@
     extChip.classList.toggle('chip-on', ready);
     extChip.classList.toggle('chip-off', !ready);
     extPanel.hidden = ready;
+    extUpdate.hidden = !ready; // botao de atualizar so faz sentido conectado
+    if (!ready) { extUpdateMsg.hidden = true; }
   }
   setExt(false);
   extPanel.hidden = false;
@@ -56,6 +60,39 @@
     maybeRunDeepLink();
   });
   document.dispatchEvent(new CustomEvent('livros:ping'));
+
+  // Botao "Verificar atualizacao": pede a extensao para checar a loja e, se
+  // houver versao nova aprovada, aplicar na hora (o Chrome ja atualiza sozinho
+  // em algumas horas; isto so adianta). Copia da mesma copy do popup.
+  function updateStatusText(status, version) {
+    switch (status) {
+      case 'update_available':
+        return version ? `Atualizando para a v${version}...` : 'Atualizando...';
+      case 'no_update': return 'Voce ja esta na versao mais recente.';
+      case 'throttled': return 'O Chrome esta limitando a checagem. Tente em alguns minutos.';
+      default: return 'Nao deu para checar agora. O Chrome atualiza sozinho em ate algumas horas.';
+    }
+  }
+  extUpdate.addEventListener('click', () => {
+    extUpdate.disabled = true;
+    extUpdateMsg.hidden = false;
+    extUpdateMsg.textContent = 'Checando...';
+    document.dispatchEvent(new CustomEvent('livros:check-update'));
+  });
+  document.addEventListener('livros:update-status', (ev) => {
+    let res = {};
+    try { res = JSON.parse(ev.detail || '{}'); } catch {}
+    extUpdateMsg.hidden = false;
+    extUpdateMsg.textContent = updateStatusText(res.status, res.version);
+    if (res.status === 'update_available') {
+      // a extensao vai recarregar (o bridge cai); recarrega a pagina para
+      // reconectar na versao nova
+      extUpdate.textContent = 'Atualizando...';
+      setTimeout(() => location.reload(), 3000);
+    } else {
+      extUpdate.disabled = false;
+    }
+  });
 
   document.querySelectorAll('.ex').forEach((b) => {
     b.addEventListener('click', () => { input.value = b.textContent; form.requestSubmit(); });

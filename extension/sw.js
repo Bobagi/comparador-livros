@@ -35,12 +35,39 @@ chrome.runtime.onInstalled.addListener(() => { getAuth().catch(() => {}); });
 
 const PAGE_HOSTS = CONFIG.pageHosts || [CONFIG.backend];
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg && msg.type === 'collect' && pageAllowed(PAGE_HOSTS, sender.url)) {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || !pageAllowed(PAGE_HOSTS, sender.url)) return;
+  if (msg.type === 'collect') {
     queue.push(msg.job);
     runQueue();
+    return;
+  }
+  if (msg.type === 'checkUpdate') {
+    runUpdateCheck().then(sendResponse);
+    return true; // resposta assincrona
   }
 });
+
+// Pede ao Chrome para checar a loja por uma versao mais nova E, se houver,
+// aplica na hora (reload da extensao) em vez de esperar o auto-update passivo.
+// So funciona para a extensao instalada PELA loja; em modo desenvolvedor a API
+// lanca e caimos no status 'error' (tratado como texto amigavel no cliente).
+async function runUpdateCheck() {
+  const current = chrome.runtime.getManifest().version;
+  const { status, details } = await new Promise((resolve) => {
+    try {
+      chrome.runtime.requestUpdateCheck((st, dt) => resolve({ status: st, details: dt }));
+    } catch {
+      resolve({ status: 'error', details: null });
+    }
+  });
+  if (status === 'update_available') {
+    // responde primeiro; o reload derruba o service worker
+    setTimeout(() => { try { chrome.runtime.reload(); } catch { /* noop */ } }, 500);
+    return { status, current, version: (details && details.version) || null };
+  }
+  return { status: status || 'error', current };
+}
 
 async function runQueue() {
   if (running) return;

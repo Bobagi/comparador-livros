@@ -19,4 +19,19 @@
     chrome.runtime.sendMessage({ type: 'collect', job: { searchId: job.searchId, query: job.query } })
       .catch(() => {});
   });
+
+  // O site pede uma checagem de atualizacao; devolvemos o status por evento.
+  document.addEventListener('livros:check-update', () => {
+    const emit = (detail) => document.dispatchEvent(
+      new CustomEvent('livros:update-status', { detail: JSON.stringify(detail) }));
+    try {
+      chrome.runtime.sendMessage({ type: 'checkUpdate' })
+        .then((res) => emit(res || { status: 'error' }))
+        .catch(() => emit({ status: 'error' }));
+    } catch {
+      // contexto da extensao invalidado (ela acabou de recarregar): recarregar
+      // a pagina reconecta na versao nova
+      emit({ status: 'error' });
+    }
+  });
 })();

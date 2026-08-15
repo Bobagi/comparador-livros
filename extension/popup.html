@@ -18,6 +18,13 @@
   .open{margin-top:9px;width:100%;background:transparent;border:1px solid var(--line);color:var(--text);font-size:13px;padding:9px 10px;display:flex;align-items:center;justify-content:center;gap:7px}
   .open:hover{border-color:var(--yellow);color:var(--yellow)}
   .foot{color:var(--muted);font-size:11px;line-height:1.4;margin-top:11px;border-top:1px solid var(--line);padding-top:9px}
+  .upd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+  .upd .ver{color:var(--muted);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .upd button{background:transparent;border:1px solid var(--line);color:var(--text);font-size:12px;padding:6px 10px}
+  .upd button:hover:not(:disabled){border-color:var(--yellow);color:var(--yellow)}
+  .upd button:disabled{opacity:.55;cursor:wait}
+  .upd-msg{color:var(--muted);font-size:11px;line-height:1.4;margin-top:7px}
+  .upd-msg[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -42,6 +49,11 @@
     <button class="go" type="submit">Farejar</button>
   </form>
   <button class="open" id="open" type="button">Abrir o Farolivro</button>
+  <div class="upd">
+    <span class="ver">Farolivro <span id="ver"></span></span>
+    <button id="upd-btn" type="button">Verificar atualizacao</button>
+  </div>
+  <p class="upd-msg" id="upd-msg" hidden></p>
   <p class="foot">Compara novos e usados em varias lojas, a partir do seu navegador. So age quando voce pede.</p>
   <script type="module" src="popup.js"></script>
 </body>

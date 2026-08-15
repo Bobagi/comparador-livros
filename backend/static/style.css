@@ -30,6 +30,13 @@ a{color:var(--yellow)}
 .chip-on{color:var(--ok);border-color:var(--ok)}
 .chip-off{color:var(--warn);border-color:var(--warn)}
 .chip a{color:inherit;text-decoration:underline;text-underline-offset:2px;display:inline-flex;align-items:center;min-height:24px}
+.chip-btn{font-family:var(--font-mono);font-size:.72rem;padding:.15rem .7rem;min-height:26px;background:transparent;border:1px solid var(--line-strong);border-radius:999px;color:var(--muted);cursor:pointer}
+.chip-btn:hover:not(:disabled){border-color:var(--yellow);color:var(--yellow)}
+.chip-btn:disabled{opacity:.55;cursor:wait}
+.chip-btn.has-update{border-color:var(--yellow);color:var(--yellow)}
+.chip-btn[hidden]{display:none}
+.ext-update-msg{font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+.ext-update-msg[hidden]{display:none}
 .cta{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;background:var(--yellow);color:#14121c;font-family:var(--font-display);font-weight:800;border-radius:10px;padding:.6rem 1.3rem;text-decoration:none;margin:.5rem 0 .3rem}
 .cta:hover{filter:brightness(1.06)}
 .wrap{width:min(1020px,100%);margin:0 auto;padding:1.4rem 1.2rem 3rem;flex:1}
@@ -95,4 +102,6 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
   .card{grid-template-columns:1fr}
   .card .t{grid-column:1}
   .card a.go{margin-left:0}
+  /* no mobile o botao fica em linha propria: alvo de toque confortavel (>=40px) */
+  .chip-btn{min-height:40px;padding:.5rem 1rem}
 }

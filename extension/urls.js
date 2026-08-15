@@ -18,3 +18,23 @@ export function buildSiteUrl(backend, query) {
 export function pageAllowed(pageHosts, url) {
   return !!url && pageHosts.some((h) => url.startsWith(h + '/'));
 }
+
+// Texto amigavel para cada resultado de chrome.runtime.requestUpdateCheck.
+// Compartilhado pelo popup e pelo site para a copy ficar consistente.
+// `version` = versao nova (quando disponivel).
+export function updateStatusText(status, version) {
+  switch (status) {
+    case 'update_available':
+      return version
+        ? `Atualizando o Farolivro para a v${version}...`
+        : 'Atualizando o Farolivro...';
+    case 'no_update':
+      return 'Voce ja esta na versao mais recente.';
+    case 'throttled':
+      return 'O Chrome esta limitando a checagem. Tente de novo em alguns minutos.';
+    default:
+      // 'error' (ex.: extensao carregada em modo desenvolvedor, sem loja) ou
+      // qualquer status inesperado: o Chrome atualiza sozinho de qualquer forma.
+      return 'Nao deu para checar agora. O Chrome atualiza a extensao sozinho em ate algumas horas.';
+  }
+}
