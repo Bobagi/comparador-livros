@@ -18,13 +18,14 @@ import re
 import sqlite3
 import time
 import uuid
+import zipfile
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
@@ -155,9 +156,22 @@ def stamp_assets(html: str) -> str:
     return html
 
 
+def ext_version() -> str:
+    """Versao da extensao servida em /ext/livros-coletor.zip (mesmo artefato
+    enviado a Chrome Web Store): lida do manifest.json dentro do zip."""
+    zpath = STATIC_DIR / "ext" / "livros-coletor.zip"
+    try:
+        with zipfile.ZipFile(zpath) as z:
+            version = json.loads(z.read("manifest.json"))["version"]
+        return version if re.fullmatch(r"\d+(\.\d+){1,3}", version) else ""
+    except Exception:
+        return ""
+
+
 def build_index() -> None:
     global INDEX_HTML, PRIV_HTML
-    INDEX_HTML = stamp_assets((STATIC_DIR / "index.html").read_text())
+    html = stamp_assets((STATIC_DIR / "index.html").read_text())
+    INDEX_HTML = html.replace("__EXT_VERSION__", ext_version())
     priv = STATIC_DIR / "privacidade.html"
     PRIV_HTML = stamp_assets(priv.read_text()) if priv.exists() else ""
 
@@ -479,6 +493,28 @@ def privacidade():
     if not PRIV_HTML:
         raise HTTPException(404, "nao encontrado")
     return HTMLResponse(PRIV_HTML)
+
+
+# Sem estas rotas o catch-all de 404 devolveria o index no lugar de
+# robots/sitemap, e o Google nao descobriria as paginas.
+@app.get("/robots.txt")
+def robots():
+    return PlainTextResponse(
+        "User-agent: *\nAllow: /\nSitemap: https://farolivro.bobagi.space/sitemap.xml\n"
+    )
+
+
+@app.get("/sitemap.xml")
+def sitemap():
+    urls = "".join(
+        f"<url><loc>https://farolivro.bobagi.space{p}</loc></url>"
+        for p in ("/", "/privacidade")
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    )
+    return Response(xml, media_type="application/xml")
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

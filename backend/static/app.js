@@ -31,6 +31,20 @@
 
   const STORE_URL = 'https://chromewebstore.google.com/detail/farolivro/jnkjabpgnocifbnnceoepijbcggmkkek';
 
+  // Versao mais recente da extensao = a do zip que este backend serve (mesmo
+  // artefato enviado a loja), injetada no <meta> pelo build_index(). Formato
+  // validado antes de exibir; se o meta faltar/for invalido, nada aparece.
+  const extLatest = $('#ext-latest');
+  const panelVer = $('#panel-ver');
+  const metaVer = (document.querySelector('meta[name="farolivro-ext"]') || {}).content || '';
+  const latestVer = /^\d+(\.\d+){1,3}$/.test(metaVer) ? metaVer : '';
+  if (latestVer) {
+    extLatest.textContent = `mais recente: v${latestVer}`;
+    extLatest.hidden = false;
+    panelVer.textContent = `Versao mais recente da extensao: v${latestVer}.`;
+    panelVer.hidden = false;
+  }
+
   function setExt(ready, version) {
     extReady = ready;
     extChip.replaceChildren();
@@ -49,6 +63,10 @@
     extPanel.hidden = ready;
     extUpdate.hidden = !ready; // botao de atualizar so faz sentido conectado
     if (!ready) { extUpdateMsg.hidden = true; }
+    // instalada != mais recente: o botao vira chamada direta de atualizacao
+    const outdated = ready && latestVer && version && version !== latestVer;
+    extUpdate.classList.toggle('has-update', outdated);
+    extUpdate.textContent = outdated ? `Atualizar para v${latestVer}` : 'Verificar atualizacao';
   }
   setExt(false);
   extPanel.hidden = false;
