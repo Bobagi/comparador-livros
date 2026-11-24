@@ -211,6 +211,7 @@ async function tryTabNow(store, url) {
     // O scraper NAO e content script declarado: e injetado so nas abas que a
     // propria extensao abre (nunca roda na navegacao normal do usuario).
     let injected = false;
+    let best = null;
     for (let i = 0; i < 6; i++) {
       await sleep(1500);
       try {
@@ -225,9 +226,16 @@ async function tryTabNow(store, url) {
           return { status: 'login', listings: [], diag: { mode: 'tab', loginWall: true } };
         }
         if (resp && resp.items && resp.items.length > 0) {
-          return { status: 'ok', listings: resp.items, diag: { mode: 'tab', ...resp.diag } };
+          // SPA que carrega os cards aos poucos (Shopee, Enjoei): so devolve
+          // quando a contagem para de crescer, senao pega os 3 primeiros.
+          if (best && resp.items.length <= best.items.length) {
+            return { status: 'ok', listings: best.items, diag: { mode: 'tab', ...best.diag } };
+          }
+          best = resp;
+          continue;
         }
         if (resp && i >= 4) {
+          if (best) return { status: 'ok', listings: best.items, diag: { mode: 'tab', ...best.diag } };
           const blocked = resp.diag && resp.diag.captcha;
           return {
             status: blocked ? 'blocked' : 'empty',
@@ -241,6 +249,7 @@ async function tryTabNow(store, url) {
         injected = false;
       }
     }
+    if (best) return { status: 'ok', listings: best.items, diag: { mode: 'tab', ...best.diag } };
     return { status: 'error', listings: [], diag: { mode: 'tab', error: 'scraper nao respondeu' } };
   } finally {
     if (tab) chrome.tabs.remove(tab.id).catch(() => {});

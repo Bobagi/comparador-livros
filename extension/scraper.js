@@ -43,6 +43,11 @@
         : outerHtml.slice(0, 150000);
     }
     sendResponse(resp);
+    // Shopee/Enjoei so renderizam mais cards ao rolar: rola a aba de fundo
+    // (aberta pela propria extensao) para a proxima leitura ver mais anuncios.
+    if (msg.store === 'shopee' || msg.store === 'enjoei') {
+      try { window.scrollTo(0, document.documentElement.scrollHeight); } catch { /* noop */ }
+    }
   });
 
   function clean(text) {
