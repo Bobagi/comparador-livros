@@ -293,3 +293,23 @@ def test_corrida_pela_posse_da_busca_tem_um_dono_so(api):
     with ThreadPoolExecutor(max_workers=6) as ex:
         codes = list(ex.map(send, creds))
     assert codes.count(200) == 1 and codes.count(403) == 5, codes
+
+
+def test_shopee_vazia_com_tela_de_login_vira_status_login(api):
+    """A Shopee passou a mostrar 'Login Necessario' na propria url da busca;
+    coletores antigos mandam 'empty' + amostra. O backend reconhece a tela."""
+    m, client = api
+    cred = register(client)
+    sid = create_search(client, "a hora da estrela")
+    # na pagina real a tela vem depois de ~75 KB de svg/css (sample real de 24/11/2026)
+    tela = "<html><title>x em Promocao na Shopee</title><body>" + "<svg></svg>" * 9000 + "<div>Login Necessário</div><div>Parece que você ainda não está logado.</div></body></html>"
+    body = {"store": "shopee", "status": "empty", "listings": [], "sampleHtml": tela}
+    assert client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(cred)).status_code == 200
+    data = client.get(f"/api/searches/{sid}").json()
+    assert next(s for s in data["stores"] if s["store"] == "shopee")["status"] == "login"
+    # vazio de verdade continua vazio
+    sid2 = create_search(client, "outro livro qualquer")
+    body2 = {"store": "shopee", "status": "empty", "listings": [], "sampleHtml": "<html>nenhum resultado</html>"}
+    client.post(f"/api/searches/{sid2}/results", json=body2, headers=_auth(cred))
+    data2 = client.get(f"/api/searches/{sid2}").json()
+    assert next(s for s in data2["stores"] if s["store"] == "shopee")["status"] == "empty"

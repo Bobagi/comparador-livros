@@ -282,6 +282,11 @@ class ListingIn(BaseModel):
 LISTING_CLIP = {"title": 400, "priceText": 60, "seller": 120, "condition": 30, "extra": 400}
 URL_MAX = 1000
 
+# Tela da Shopee para visitante deslogado servida na PROPRIA url da busca
+# (nov/2026). Coletores ate a 0.5.0 so reconheciam o redirect para
+# /verify/traffic e mandavam "empty" com a amostra desta tela.
+SHOPEE_LOGIN_RE = re.compile(r"Login Necess[aá]rio|ainda n[aã]o est[aá] logado", re.I)
+
 
 def clean_listing(raw) -> ListingIn | None:
     """Valida UM anuncio. Texto longo demais e cortado e preco numerico vira
@@ -452,6 +457,9 @@ def post_results(
     if body.status not in STATUS_VALUES:
         raise HTTPException(400, "status invalido")
     now = int(time.time())
+    if (body.store == "shopee" and body.status == "empty" and body.sampleHtml
+            and SHOPEE_LOGIN_RE.search(body.sampleHtml)):
+        body.status = "login"
     # db_write(): a leitura+atualizacao do contador de rate limit da instalacao
     # e o DELETE+INSERT das ofertas rodam na MESMA transacao atomica
     with db_write() as conn:
@@ -507,7 +515,7 @@ def post_results(
             (body.status, detail, accepted, now, sid, body.store),
         )
 
-    if body.sampleHtml and body.status in ("empty", "blocked", "error"):
+    if body.sampleHtml and body.status in ("empty", "blocked", "error"):  # "login" nao: e esperado
         save_sample(body.store, s["query"], body.sampleHtml)
     return {"ok": True, "accepted": accepted}
 

@@ -153,6 +153,12 @@ test('loginWall: Shopee mandando para verificacao/login e detectada; busca norma
   assert.equal(P.loginWall('shopee', 'https://shopee.com.br/search?keyword=livro'), false);
   assert.equal(P.loginWall('shopee', 'https://evil.com/shopee.com.br/verify/traffic'), false);
   assert.equal(P.loginWall('olx', 'https://shopee.com.br/verify/traffic'), false);
+  // tela "Login Necessario" na propria url da busca (visto ao vivo em 24/11/2026)
+  // na pagina real a tela vem depois de ~75 KB de svg/css
+  const tela = '<title>x em Promocao na Shopee Brasil</title>' + '<svg></svg>'.repeat(9000) + '<div>Login Necessário</div><p>Parece que você ainda não está logado.</p>';
+  assert.equal(P.loginWall('shopee', 'https://shopee.com.br/search?keyword=x', tela), true);
+  assert.equal(P.loginWall('shopee', 'https://shopee.com.br/search?keyword=x', '<div>resultados</div>'), false);
+  assert.equal(P.loginWall('olx', 'https://www.olx.com.br/x', tela), false);
 });
 
 test('ML: estado CORTADO/invalido (amostra real) ainda rende anuncios pelo extrator tolerante', () => {

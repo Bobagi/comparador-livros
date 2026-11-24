@@ -32,7 +32,7 @@
         ready: document.readyState,
         captcha: typeof FaroParsers !== 'undefined' && FaroParsers.looksBlocked(outerHtml),
         // Shopee manda quem nao esta logado para a verificacao/login
-        loginWall: typeof FaroParsers !== 'undefined' && FaroParsers.loginWall(msg.store, location.href),
+        loginWall: typeof FaroParsers !== 'undefined' && FaroParsers.loginWall(msg.store, location.href, outerHtml),
         anchors: document.querySelectorAll('a[href]').length,
         tabParser: parser,
       },

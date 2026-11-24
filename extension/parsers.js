@@ -261,9 +261,15 @@
 
   // Loja que so mostra a busca para quem esta logado nela: a Shopee manda o
   // visitante deslogado para /verify/traffic ou para a tela de login.
-  function loginWall(store, href) {
-    if (store !== 'shopee' || typeof href !== 'string') return false;
-    return /^https:\/\/([\w-]+\.)*shopee\.com\.br\/(verify\/traffic|buyer\/login)/i.test(href);
+  // Desde nov/2026 ela tambem serve a tela "Login Necessario" na PROPRIA url
+  // da busca, entao o texto da pagina conta tanto quanto a url.
+  const SHOPEE_LOGIN_TEXT = /Login Necess[aá]rio|ainda n[aã]o est[aá] logado/i;
+
+  function loginWall(store, href, html) {
+    if (store !== 'shopee') return false;
+    if (typeof href === 'string' &&
+        /^https:\/\/([\w-]+\.)*shopee\.com\.br\/(verify\/traffic|buyer\/login)/i.test(href)) return true;
+    return typeof html === 'string' && SHOPEE_LOGIN_TEXT.test(html.slice(0, 1000000));
   }
 
   function dedupe(items) {
