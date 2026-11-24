@@ -38,7 +38,7 @@ SAMPLES_DIR = DATA_DIR / "samples"
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 LIVROS_KEY = os.environ.get("LIVROS_KEY", "")
 CACHE_TTL_S = 6 * 3600
-SEARCH_TIMEOUT_S = 150
+SEARCH_TIMEOUT_S = 300  # coleta real das 6 lojas ja passou de 200 s
 MAX_SAMPLES = 60
 
 # Coletores publicados (Chrome Web Store) se registram sozinhos: o pacote da
@@ -49,7 +49,8 @@ POSTS_PER_WINDOW = 80          # envios de resultado por instalacao por janela
 POST_WINDOW_S = 600            # (uma busca = 6 envios; ~13 buscas/10min)
 RESULTS_MAX_AGE_S = 15 * 60    # busca velha nao aceita mais resultado
 
-STATUS_VALUES = {"ok", "empty", "blocked", "error"}
+# "login": a loja so mostra a busca para quem esta logado nela (Shopee)
+STATUS_VALUES = {"ok", "empty", "blocked", "error", "login"}
 
 
 def db() -> sqlite3.Connection:
@@ -133,6 +134,10 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_installs_ip ON installs(reg_ip, created_at);
             """
         )
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(searches)")}
+        if "collector" not in cols:
+            # instalacao dona da busca (a 1a que entregou resultado para ela)
+            conn.execute("ALTER TABLE searches ADD COLUMN collector TEXT")
 
 
 INDEX_HTML = ""
@@ -260,6 +265,9 @@ async def openlibrary_lookup(query: str) -> dict | None:
 class SearchIn(BaseModel):
     query: str = Field(min_length=3, max_length=120)
     force: bool = False
+    # sem a extensao a pagina so quer o que ja foi farejado (cache); nao cria
+    # busca nova que ninguem vai coletar (virava 'pendente' para sempre)
+    only_cached: bool = False
 
 
 class ListingIn(BaseModel):
@@ -271,10 +279,38 @@ class ListingIn(BaseModel):
     extra: str | None = Field(default=None, max_length=400)
 
 
+LISTING_CLIP = {"title": 400, "priceText": 60, "seller": 120, "condition": 30, "extra": 400}
+URL_MAX = 1000
+
+
+def clean_listing(raw) -> ListingIn | None:
+    """Valida UM anuncio. Texto longo demais e cortado e preco numerico vira
+    texto; o que ainda for invalido (ex.: link de rastreio do ML com mais de
+    1000 caracteres, que cortado viraria link quebrado) e descartado SOZINHO.
+    Antes, um unico anuncio fora do formato derrubava o lote inteiro com 422
+    e a loja ficava 'pendente' para sempre."""
+    if not isinstance(raw, dict):
+        return None
+    item = {}
+    for key, cap in LISTING_CLIP.items():
+        v = raw.get(key)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            v = f"{v:.2f}" if key == "priceText" else str(v)
+        item[key] = v[:cap] if isinstance(v, str) else None
+    url = raw.get("url")
+    if not isinstance(url, str) or len(url.strip()) > URL_MAX:
+        return None
+    item["url"] = url.strip()
+    try:
+        return ListingIn.model_validate(item)
+    except ValueError:
+        return None
+
+
 class ResultsIn(BaseModel):
     store: str
     status: str
-    listings: list[ListingIn] = Field(default_factory=list, max_length=60)
+    listings: list = Field(default_factory=list, max_length=60)
     diag: dict | None = None
     sampleHtml: str | None = Field(default=None, max_length=200_000)
 
@@ -330,6 +366,8 @@ async def create_search(body: SearchIn):
                 if has_results:
                     return {"id": row["id"], "cached": True,
                             "canonical": {"title": row["canonical_title"], "author": row["canonical_author"]}}
+    if body.only_cached:
+        return {"id": None, "cached": False, "canonical": None}
     meta = await openlibrary_lookup(body.query)
     sid = str(uuid.uuid4())
     with db() as conn:
@@ -423,12 +461,23 @@ def post_results(
             raise HTTPException(404, "busca nao encontrada")
         if now - s["created_at"] > RESULTS_MAX_AGE_S:
             raise HTTPException(410, "busca velha demais para receber resultados")
+        # A busca fica presa a 1a instalacao que entrega resultado para ela.
+        # Sem isso, qualquer instalacao (o registro e aberto) que descobrisse o
+        # id - basta repetir a mesma consulta, que devolve o cache - trocava os
+        # anuncios de outra pessoa por um anuncio dela (sweep de 24/11/2026).
+        # Atomico: db_write() segura o lock de escrita do SQLite.
+        if x_livros_install:
+            if s["collector"] is None:
+                conn.execute("UPDATE searches SET collector=? WHERE id=?", (x_livros_install, sid))
+            elif s["collector"] != x_livros_install:
+                raise HTTPException(403, "esta busca esta sendo farejada por outra instalacao")
         author_tokens = (s["canonical_author"] or "").split() or None
 
         accepted = 0
         conn.execute("DELETE FROM offers WHERE search_id=? AND store=?", (sid, body.store))
-        for listing in body.listings:
-            if not M.url_allowed(body.store, listing.url):
+        for raw in body.listings:
+            listing = clean_listing(raw)
+            if listing is None or not M.url_allowed(body.store, listing.url):
                 continue
             res = M.evaluate_listing(
                 s["query"], listing.title, listing.extra or "",

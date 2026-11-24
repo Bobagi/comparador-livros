@@ -98,17 +98,35 @@ function searchUrl(store, query) {
   }
 }
 
+// Lojas em paralelo (ate 3 por vez): em uso real a coleta sequencial das 6
+// passou de 200 s e o site desistia antes. Cada loja e um host diferente, entao
+// o paralelismo nao aumenta o ritmo de pedidos em nenhuma delas. Aba de fundo
+// continua uma por vez (trava abaixo) para nao abrir varias abas no navegador.
+const PARALLEL = 3;
+
 async function runJob(job) {
-  for (const store of STORES) {
-    let payload;
-    try {
-      payload = await collectStore(store, job.query);
-    } catch (e) {
-      payload = { status: 'error', listings: [], diag: { error: String(e).slice(0, 300) } };
+  const pending = [...STORES];
+  async function worker() {
+    while (pending.length) {
+      const store = pending.shift();
+      let payload;
+      try {
+        payload = await collectStore(store, job.query);
+      } catch (e) {
+        payload = { status: 'error', listings: [], diag: { error: String(e).slice(0, 300) } };
+      }
+      await postResults(job.searchId, store, payload);
+      await sleep(300 + Math.random() * 700);
     }
-    await postResults(job.searchId, store, payload);
-    await sleep(900 + Math.random() * 1600);
   }
+  await Promise.all(Array.from({ length: PARALLEL }, worker));
+}
+
+let tabChain = Promise.resolve();
+function withTabLock(fn) {
+  const run = tabChain.then(fn, fn);
+  tabChain = run.catch(() => {});
+  return run;
 }
 
 async function collectStore(store, query) {
@@ -156,25 +174,36 @@ async function tryFetch(store, url) {
   };
 }
 
-let offscreenReady = false;
-async function parseInOffscreen(store, html, base) {
+// Uma promessa so: com lojas em paralelo, duas chamadas simultaneas nao podem
+// criar o documento duas vezes nem mandar o parse antes de ele existir.
+let offscreenReady = null;
+function ensureOffscreen() {
   if (!offscreenReady) {
-    try {
-      await chrome.offscreen.createDocument({
-        url: 'offscreen.html',
-        reasons: ['DOM_PARSER'],
-        justification: 'Parse do HTML das paginas de busca das lojas',
-      });
-    } catch (e) {
-      // ja existe: seguir
-    }
-    offscreenReady = true;
+    offscreenReady = chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: ['DOM_PARSER'],
+      justification: 'Parse do HTML das paginas de busca das lojas',
+    }).catch(() => { /* ja existe (service worker reiniciado): seguir */ });
   }
-  const resp = await chrome.runtime.sendMessage({ type: 'parse', store, html, base });
+  return offscreenReady;
+}
+
+async function parseInOffscreen(store, html, base) {
+  await ensureOffscreen();
+  let resp;
+  try {
+    resp = await chrome.runtime.sendMessage({ type: 'parse', store, html, base });
+  } catch (e) {
+    resp = null;
+  }
   return resp || { items: [], diag: { parser: 'sem resposta do offscreen' } };
 }
 
-async function tryTab(store, url) {
+function tryTab(store, url) {
+  return withTabLock(() => tryTabNow(store, url));
+}
+
+async function tryTabNow(store, url) {
   let tab;
   try {
     tab = await chrome.tabs.create({ url, active: false });
@@ -190,6 +219,11 @@ async function tryTab(store, url) {
           injected = true;
         }
         const resp = await chrome.tabs.sendMessage(tab.id, { type: 'scrape', store, wantSample: i >= 4 });
+        if (resp && resp.diag && resp.diag.loginWall) {
+          // a loja so mostra a busca para quem esta logado nela: o site avisa
+          // o usuario em vez de dizer "vazio"
+          return { status: 'login', listings: [], diag: { mode: 'tab', loginWall: true } };
+        }
         if (resp && resp.items && resp.items.length > 0) {
           return { status: 'ok', listings: resp.items, diag: { mode: 'tab', ...resp.diag } };
         }

@@ -8,6 +8,7 @@ anuncios reais rotulados na Fase 0 (fase0/*.csv).
 
 import re
 import unicodedata
+from urllib.parse import urlsplit
 from dataclasses import dataclass, field
 
 from rapidfuzz import fuzz
@@ -290,10 +291,25 @@ def evaluate_listing(
 
 
 def url_allowed(store: str, url: str) -> bool:
-    m = re.match(r"https://([^/]+)/", url + "/")
-    if not m:
+    """Link de anuncio so passa se o navegador vai MESMO para a loja.
+
+    O host vem do parser de URL, nao de regex sobre o texto: antes, um
+    `https://evil.example#.mercadolivre.com.br/` (ou `?`, `\\`, `:443#`)
+    passava porque o "host" capturado terminava com o sufixo da loja, mas o
+    navegador abria evil.example. Fora tambem: http, credencial na URL, porta
+    nao padrao, barra invertida e caractere de controle."""
+    if not isinstance(url, str) or any(c in url for c in "\\ \t\r\n") or not url.startswith("https://"):
         return False
-    host = m.group(1).lower()
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        return False
+    if parts.scheme != "https" or parts.username or parts.password or port not in (None, 443):
+        return False
+    host = (parts.hostname or "").lower()
+    if not host or not re.fullmatch(r"[a-z0-9.-]+", host):
+        return False
     return any(
         host == suffix.lstrip(".") or host.endswith(suffix)
         for suffix in STORE_HOSTS.get(store, ())

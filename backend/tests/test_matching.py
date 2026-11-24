@@ -149,6 +149,32 @@ def test_url_allowlist_por_loja():
     assert not url_allowed("amazon", "http://www.amazon.com.br/dp/X")  # http nao
 
 
+def test_url_allowlist_nao_cai_em_truque_de_host():
+    """Bypasses reais confirmados ao vivo em 24/11/2026: o host era lido por
+    regex ate a primeira barra, e '#', '?' ou '\\' antes dela enganavam."""
+    for url in [
+        "https://evil.example#.mercadolivre.com.br/x",
+        "https://evil.example?.mercadolivre.com.br/x",
+        "https://evil.example\\.mercadolivre.com.br/x",
+        "https://evil.example:443#.mercadolivre.com.br/",
+        "https://x.mercadolivre.com.br@evil.example/x",
+        "https://user:pw@produto.mercadolivre.com.br/MLB-1",
+        "https://produto.mercadolivre.com.br:8443/MLB-1",
+        "https://produto.mercadolivre.com.br.evil.example/x",
+        "https://evil.example/.mercadolivre.com.br/",
+        "https://produto.mercadolivre.com.br\t/MLB-1",
+        "javascript:alert(1)//.mercadolivre.com.br/",
+        "https://[::1]/.mercadolivre.com.br",
+        "https://",
+    ]:
+        assert not url_allowed("mercadolivre", url), url
+    # o que e legitimo continua passando
+    assert url_allowed("mercadolivre", "https://produto.mercadolivre.com.br/MLB-1?x=1#y")
+    assert url_allowed("mercadolivre", "https://produto.mercadolivre.com.br:443/MLB-1")
+    assert url_allowed("mercadolivre", "https://mercadolivre.com.br/livro/p/MLB1")
+    assert url_allowed("shopee", "https://shopee.com.br/livro-i.1.2")
+
+
 def test_anuncio_c2c_curto_sem_autor_vira_provavel():
     r = run(Q_DUNA, "Duna capa dura", "usado, Fortaleza CE")
     assert r.tier == "provavel", (r.tier, r.reason, r.score)

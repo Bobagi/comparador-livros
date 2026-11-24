@@ -17,7 +17,7 @@
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || msg.type !== 'scrape') return;
     const outerHtml = document.documentElement.outerHTML;
-    let items = extract(HREF_PATTERNS[msg.store]);
+    let items = extract(HREF_PATTERNS[msg.store], msg.store);
     let parser = 'anchors';
     if (items.length === 0 && typeof FaroParsers !== 'undefined') {
       // Cards sem <a href> (EV) ou SPA presa na tela de loading em aba de
@@ -31,6 +31,8 @@
         docTitle: document.title.slice(0, 120),
         ready: document.readyState,
         captcha: typeof FaroParsers !== 'undefined' && FaroParsers.looksBlocked(outerHtml),
+        // Shopee manda quem nao esta logado para a verificacao/login
+        loginWall: typeof FaroParsers !== 'undefined' && FaroParsers.loginWall(msg.store, location.href),
         anchors: document.querySelectorAll('a[href]').length,
         tabParser: parser,
       },
@@ -47,7 +49,7 @@
     return (text || '').replace(/\s+/g, ' ').trim().slice(0, 350);
   }
 
-  function extract(hrefRe) {
+  function extract(hrefRe, store) {
     if (!hrefRe) return [];
     const out = [];
     const seen = new Set();
@@ -55,6 +57,9 @@
       let url;
       try { url = new URL(a.getAttribute('href'), location.href).toString().split('#')[0]; } catch { continue; }
       if (!hrefRe.test(url)) continue;
+      // ML: link de produto sem a query de rastreio; url gigante fica de fora
+      if (typeof FaroParsers !== 'undefined') url = FaroParsers.canonicalUrl(store, url);
+      if (!url) continue;
       const key = url.split('?')[0];
       if (seen.has(key)) continue;
       let priceText = null;

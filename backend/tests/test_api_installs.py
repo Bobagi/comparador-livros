@@ -162,3 +162,134 @@ def test_amostra_salva_redige_email(api):
     body = files[-1].read_text()
     assert "fulano.tal+x@gmail.com" not in body
     assert "***@***" in body
+
+
+def _auth(cred):
+    return {"x-livros-install": cred["id"], "x-livros-key": cred["token"]}
+
+
+def test_anuncio_invalido_nao_derruba_o_lote(api):
+    """Regressao real (nov/2026): o link de rastreio do Mercado Livre passava de
+    1000 caracteres, o lote inteiro tomava 422 e a loja ficava 'pendente'.
+    Agora cada anuncio e validado sozinho."""
+    m, client = api
+    cred = register(client)
+    sid = create_search(client, "o pequeno principe")
+    rastreio = "https://click1.mercadolivre.com.br/mclics/clicks/external/MLB/count?a=" + "x" * 1500
+    body = {
+        "store": "mercadolivre",
+        "status": "ok",
+        "listings": [
+            {"title": "O Pequeno Principe edicao de bolso", "priceText": "R$ 19,90",
+             "url": "https://produto.mercadolivre.com.br/MLB-1234567890-o-pequeno-principe-_JM"},
+            {"title": "O Pequeno Principe capa dura", "priceText": 39.9,
+             "url": "https://produto.mercadolivre.com.br/MLB-3234567890-o-pequeno-principe-_JM"},
+            {"title": "O Pequeno Principe patrocinado", "url": rastreio},
+            {"title": "x" * 900, "priceText": "R$ 25,00",
+             "url": "https://produto.mercadolivre.com.br/MLB-2234567890-o-pequeno-principe-_JM"},
+            {"title": "O Pequeno Principe sem url"},
+            "isto nem e um objeto",
+        ],
+    }
+    r = client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(cred))
+    assert r.status_code == 200, r.text
+    # o bom, o de preco numerico e o de titulo enorme (cortado) entram; o link
+    # de rastreio gigante, o sem url e o lixo nao-objeto ficam de fora
+    assert r.json()["accepted"] == 3
+    data = client.get(f"/api/searches/{sid}").json()
+    ml = next(s for s in data["stores"] if s["store"] == "mercadolivre")
+    assert ml["status"] == "ok" and ml["count"] == 3
+    with m.db() as conn:
+        rows = conn.execute("SELECT url, title_raw, price_cents FROM offers WHERE search_id=?", (sid,)).fetchall()
+    assert all(len(r_["url"]) <= m.URL_MAX for r_ in rows)
+    assert all(len(r_["title_raw"]) <= 400 for r_ in rows)
+    assert not any("click1" in r_["url"] for r_ in rows)
+    assert 3990 in [r_["price_cents"] for r_ in rows]
+
+
+def test_status_login_aceito(api):
+    m, client = api
+    cred = register(client)
+    sid = create_search(client)
+    body = {"store": "shopee", "status": "login", "listings": []}
+    r = client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(cred))
+    assert r.status_code == 200
+    data = client.get(f"/api/searches/{sid}").json()
+    assert next(s for s in data["stores"] if s["store"] == "shopee")["status"] == "login"
+
+
+def test_status_desconhecido_continua_recusado(api):
+    m, client = api
+    cred = register(client)
+    sid = create_search(client)
+    body = {"store": "shopee", "status": "hackeado", "listings": []}
+    r = client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(cred))
+    assert r.status_code == 400
+
+
+def test_lote_com_mais_de_60_anuncios_e_recusado(api):
+    m, client = api
+    cred = register(client)
+    sid = create_search(client)
+    item = {"title": "livro qualquer", "url": "https://www.olx.com.br/livro-1234567890"}
+    body = {"store": "olx", "status": "ok", "listings": [item] * 61}
+    r = client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(cred))
+    assert r.status_code == 422
+
+
+def test_sem_extensao_nao_cria_busca_fantasma(api):
+    """Sem a extensao o site pede so o cache: 40 de 50 buscas reais ficaram
+    'pendentes' para sempre porque eram criadas sem ninguem para coletar."""
+    m, client = api
+    r = client.post("/api/searches", json={"query": "vargas llosa", "only_cached": True})
+    assert r.status_code == 200
+    assert r.json()["id"] is None
+    with m.db() as conn:
+        assert conn.execute("SELECT COUNT(*) c FROM searches").fetchone()["c"] == 0
+
+
+def test_sem_extensao_ainda_ve_o_que_ja_foi_farejado(api):
+    m, client = api
+    cred = register(client)
+    sid = create_search(client, "vargas llosa")
+    body = {"store": "olx", "status": "empty", "listings": []}
+    assert client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(cred)).status_code == 200
+    r = client.post("/api/searches", json={"query": "Vargas Llosa", "only_cached": True})
+    assert r.json() == {"id": sid, "cached": True, "canonical": {"title": None, "author": None}}
+
+
+def test_outra_instalacao_nao_sequestra_busca_alheia(api):
+    """Ataque confirmado ao vivo (24/11/2026): a 2a instalacao descobria o id
+    repetindo a consulta e trocava os anuncios da vitima por um golpe."""
+    m, client = api
+    a, ev = register(client), register(client)
+    sid = create_search(client, "livro sequestro teste")
+    ok = {"store": "olx", "status": "ok", "listings": [
+        {"title": "livro sequestro teste", "priceText": "R$ 50,00",
+         "url": "https://www.olx.com.br/livro-sequestro-teste-1234567890"}]}
+    assert client.post(f"/api/searches/{sid}/results", json=ok, headers=_auth(a)).status_code == 200
+    golpe = {"store": "olx", "status": "ok", "listings": [
+        {"title": "livro sequestro teste", "priceText": "R$ 1,00",
+         "url": "https://www.olx.com.br/golpe-0000000001"}]}
+    assert client.post(f"/api/searches/{sid}/results", json=golpe, headers=_auth(ev)).status_code == 403
+    apaga = {"store": "amazon", "status": "blocked", "listings": []}
+    assert client.post(f"/api/searches/{sid}/results", json=apaga, headers=_auth(ev)).status_code == 403
+    data = client.get(f"/api/searches/{sid}").json()
+    precos = [o["price_cents"] for g in data["confirmadas"].values() for o in g] + [o["price_cents"] for o in data["provaveis"]]
+    assert precos == [5000]
+    # a dona continua entregando as outras lojas
+    assert client.post(f"/api/searches/{sid}/results", json=apaga, headers=_auth(a)).status_code == 200
+
+
+def test_corrida_pela_posse_da_busca_tem_um_dono_so(api):
+    m, client = api
+    creds = [register(client) for _ in range(6)]
+    sid = create_search(client, "livro corrida posse")
+    body = {"store": "olx", "status": "empty", "listings": []}
+
+    def send(c):
+        return client.post(f"/api/searches/{sid}/results", json=body, headers=_auth(c)).status_code
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        codes = list(ex.map(send, creds))
+    assert codes.count(200) == 1 and codes.count(403) == 5, codes

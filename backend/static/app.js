@@ -21,13 +21,32 @@
     olx: 'OLX', enjoei: 'Enjoei', shopee: 'Shopee',
   };
   const STATUS_LABEL = {
-    pending: 'farejando...', ok: 'ok', empty: 'vazio (parser falhou, amostra enviada)',
-    blocked: 'bloqueado', error: 'erro', sem_coletor: 'sem o Farolivro',
+    pending: 'farejando...', ok: 'ok', empty: 'nenhum anuncio',
+    blocked: 'bloqueou a busca', error: 'erro', sem_coletor: 'nao respondeu',
+    login: 'entre na sua conta da Shopee neste Chrome',
   };
   const STATUS_LABEL_NO_EXT = { ...STATUS_LABEL, pending: 'aguardando o Farolivro' };
 
   let extReady = false;
   let pollTimer = null;
+  const POLL_MAX_MS = 310000; // o backend encerra a busca em 300 s
+
+  // Extensao so existe no navegador de computador (Chrome, Edge, Brave, Opera).
+  const isMobile = (navigator.userAgentData && navigator.userAgentData.mobile) ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const panelMobile = $('#panel-mobile');
+  if (isMobile) panelMobile.hidden = false;
+
+  // O bridge da extensao anuncia em document_idle; quem busca rapido demais
+  // nao pode cair no "instale" so porque o anuncio ainda nao chegou.
+  function waitExt(ms) {
+    if (extReady) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const done = () => { clearTimeout(timer); resolve(extReady); };
+      const timer = setTimeout(done, ms);
+      document.addEventListener('livros:ext-ready', done, { once: true });
+    });
+  }
 
   const STORE_URL = 'https://chromewebstore.google.com/detail/farolivro/jnkjabpgnocifbnnceoepijbcggmkkek';
 
@@ -136,24 +155,36 @@
     if (query.length < 3) return;
     go.disabled = true;
     showMsg('');
+    extPanel.classList.remove('attn');
     try {
+      const withExt = await waitExt(1500);
       const r = await fetch('/api/searches', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ query }),
+        // sem a extensao, so serve o que ja foi farejado: nao cria busca que
+        // ninguem vai coletar
+        body: JSON.stringify({ query, only_cached: !withExt }),
       });
       if (!r.ok) throw new Error(`backend ${r.status}`);
       const data = await r.json();
-      if (!data.cached) {
-        if (extReady) {
-          document.dispatchEvent(new CustomEvent('livros:collect', {
-            detail: JSON.stringify({ searchId: data.id, query, canonical: data.canonical }),
-          }));
-        } else {
-          showMsg('Sem o Farolivro instalado nada e buscado nas lojas. Instale a extensao abaixo e fareje de novo (ou aguarde: outra maquina com o Farolivro pode completar esta busca).');
-        }
+      if (!data.id) {
+        statusArea.hidden = true;
+        results.hidden = true;
+        showMsg(isMobile
+          ? 'Ninguem farejou este livro nas ultimas horas. Para farejar as lojas agora, abra o Farolivro no Chrome do computador com a extensao instalada.'
+          : 'Para farejar as lojas o Farolivro precisa da extensao (gratis) neste navegador. Instale abaixo, recarregue a pagina e busque de novo.');
+        extPanel.hidden = false;
+        extPanel.classList.add('attn');
+        extPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        go.disabled = false;
+        return;
       }
-      if (extReady) sniffer.hidden = false;
+      if (!data.cached) {
+        document.dispatchEvent(new CustomEvent('livros:collect', {
+          detail: JSON.stringify({ searchId: data.id, query, canonical: data.canonical }),
+        }));
+        sniffer.hidden = false;
+      }
       poll(data.id);
     } catch (e) {
       sniffer.hidden = true;
@@ -173,7 +204,7 @@
         if (!r.ok) throw new Error(`backend ${r.status}`);
         const data = await r.json();
         render(data);
-        if (data.done || Date.now() - started > 160000) {
+        if (data.done || Date.now() - started > POLL_MAX_MS) {
           clearInterval(pollTimer);
           sniffer.hidden = true;
           go.disabled = false;
@@ -279,8 +310,8 @@
     if (data.done && !anyOffer) {
       const allDead = data.stores.every((s) => s.status !== 'ok');
       showMsg(allDead
-        ? 'Nenhuma loja respondeu com dados. Se o Farolivro esta instalado, as amostras de falha ja foram enviadas para calibrar os parsers.'
-        : 'As lojas responderam mas nenhum anuncio passou no matching. Veja os filtrados abaixo.');
+        ? 'Nenhuma loja trouxe anuncios para esta busca. Tente o titulo mais curto ou o ISBN; se uma loja bloqueou, as amostras ja foram enviadas para ajustar o Farolivro.'
+        : 'As lojas responderam, mas nenhum anuncio bateu com o livro buscado. Veja os filtrados abaixo.');
     }
   }
 })();

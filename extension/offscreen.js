@@ -49,6 +49,10 @@
       items = generic(doc, base, HREF_PATTERNS[store]);
       parser = parser + '+generic';
     }
+    // url limpa (ML sem rastreio) e nada acima do teto do backend
+    items = items
+      .map((i) => ({ ...i, url: FaroParsers.canonicalUrl(store, i.url) }))
+      .filter((i) => i.url);
     return { items: items.slice(0, 60), diag: { ...diag, parser, itemCount: items.length } };
   }
 

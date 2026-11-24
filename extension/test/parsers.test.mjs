@@ -110,3 +110,83 @@ test('amostra: pagina grande manda o inicio + a regiao onde os dados moram', () 
 test('amostra: pagina pequena vai inteira', () => {
   assert.equal(P.buildSample('<html>oi</html>'), '<html>oi</html>');
 });
+
+test('ML: formato de nov/2026 (funcao renomeada + produtos item_offered) vira itens', () => {
+  // Fixture SINTETICA que reproduz o formato visto na amostra real enviada pela
+  // extensao em 20/10/2026: a chamada deixou de ser `_n.ctx.s.q(` e os produtos
+  // vem como {id, name, type:"Product", item_offered:{price, url}}.
+  const html = fx('mercadolivre-state-2026-11.html');
+  assert.equal(html.includes('_n.ctx.s.q('), false); // o marcador antigo nao existe
+  const items = P.storeItems('mercadolivre', html);
+  assert.equal(items.length, 2); // sem preco e host estranho ficam de fora
+  assert.equal(items[0].title, 'Meu Amigo Dahmer');
+  assert.equal(items[0].priceText, 'R$ 68,48');
+  assert.equal(items[0].url, 'https://www.mercadolivre.com.br/meu-amigo-dahmer/up/MLBU1092509489');
+  // query de rastreio e fragmento saem do link do produto
+  assert.equal(items[1].url, 'https://produto.mercadolivre.com.br/MLB-2222222222-meu-amigo-dahmer-_JM');
+  assert.equal(items[1].priceText, 'R$ 35,00');
+});
+
+test('ML: literal grande sem anuncio nao e parseado (custo) e lixo nao quebra', () => {
+  const big = JSON.stringify('0:' + JSON.stringify({ x: 'a'.repeat(5000) }));
+  const html = `<script>f(${big});g("quebrado ${'b'.repeat(300)} polycard</script>`;
+  assert.deepEqual(P.mlStateItems(html), []);
+});
+
+test('canonicalUrl: limpa link do ML e descarta url acima do teto do backend', () => {
+  assert.equal(
+    P.canonicalUrl('mercadolivre', 'https://produto.mercadolivre.com.br/MLB-1234567890-livro-_JM?tracking_id=abc&x=' + 'y'.repeat(2000)),
+    'https://produto.mercadolivre.com.br/MLB-1234567890-livro-_JM');
+  assert.equal(P.canonicalUrl('mercadolivre', 'https://www.mercadolivre.com.br/livro/p/MLB12345678?pdp_filters=a'),
+    'https://www.mercadolivre.com.br/livro/p/MLB12345678');
+  // link de rastreio sem id de produto no caminho e grande demais: fora
+  assert.equal(P.canonicalUrl('mercadolivre', 'https://click1.mercadolivre.com.br/mclics/clicks/external/MLB/count?a=' + 'x'.repeat(1500)), null);
+  // outras lojas: so o teto
+  assert.equal(P.canonicalUrl('olx', 'https://www.olx.com.br/livro-123456789?a=1'), 'https://www.olx.com.br/livro-123456789?a=1');
+  assert.equal(P.canonicalUrl('olx', 'https://www.olx.com.br/' + 'z'.repeat(1200)), null);
+  assert.equal(P.canonicalUrl('mercadolivre', 'nao e url'), null);
+});
+
+test('loginWall: Shopee mandando para verificacao/login e detectada; busca normal nao', () => {
+  assert.equal(P.loginWall('shopee', 'https://shopee.com.br/verify/traffic/error?home_url=x&is_logged_in=false'), true);
+  assert.equal(P.loginWall('shopee', 'https://shopee.com.br/buyer/login?next=%2Fsearch'), true);
+  assert.equal(P.loginWall('shopee', 'https://shopee.com.br/search?keyword=livro'), false);
+  assert.equal(P.loginWall('shopee', 'https://evil.com/shopee.com.br/verify/traffic'), false);
+  assert.equal(P.loginWall('olx', 'https://shopee.com.br/verify/traffic'), false);
+});
+
+test('ML: estado CORTADO/invalido (amostra real) ainda rende anuncios pelo extrator tolerante', () => {
+  // Trecho de produtos copiado de uma pagina REAL do ML (amostra de 20/10/2026,
+  // sem dado de usuario) dentro de um estado propositalmente invalido.
+  const html = fx('mercadolivre-real-items-cut.html');
+  assert.equal(P.mlStateItems(html).length, 0); // o parser estruturado nao consegue
+  const items = P.storeItems('mercadolivre', html);
+  assert.equal(items.length, 3);
+  assert.deepEqual(items[0], {
+    title: 'Meu Amigo Dahmer', priceText: 'R$ 68,48',
+    url: 'https://www.mercadolivre.com.br/meu-amigo-dahmer/up/MLBU1092509489', seller: null, extra: null,
+  });
+  // / no titulo vira "/"
+  assert.equal(items[1].title, 'Livro - Meu Amigo Dahmer - Novo/lacrado');
+  assert.equal(items[1].priceText, 'R$ 93,41');
+});
+
+test('ML: extrator tolerante so emite host do ML e ignora preco ausente', () => {
+  const mk = (name, price, url) => `{\\"name\\":\\"${name}\\",\\"item_offered\\":{\\"price\\":${price},\\"url\\":\\"${url}\\"}}`;
+  const html = '<script>x("' + [
+    mk('Livro Bom Demais', 20, 'https:\\u002F\\u002Fwww.mercadolivre.com.br\\u002Flivro\\u002Fup\\u002FMLBU1234567'),
+    mk('Livro Host Mau', 20, 'https:\\u002F\\u002Fevil.com\\u002FMLBU1234567'),
+    mk('Livro Sem Preco', 'null', 'https:\\u002F\\u002Fwww.mercadolivre.com.br\\u002Fx\\u002Fup\\u002FMLBU7654321'),
+  ].join(',') + '")</script>';
+  const items = P.mlLooseItems(html);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].title, 'Livro Bom Demais');
+});
+
+test('ML: extrator tolerante e linear em entrada hostil (sem backtracking catastrofico)', () => {
+  const hostile = '"name":"' + 'a'.repeat(300) + '"' + ' '.repeat(790) + '"item_offered":{"price":1';
+  const html = hostile.repeat(3000); // ~3,3 MB
+  const t0 = Date.now();
+  P.mlLooseItems(html);
+  assert.ok(Date.now() - t0 < 2000, `demorou ${Date.now() - t0} ms`);
+});
