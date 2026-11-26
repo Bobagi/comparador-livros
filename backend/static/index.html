@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Farolivro · fareje o menor preco de qualquer livro, novo ou usado</title>
-<meta name="description" content="Compare precos de livros novos e usados nas principais lojas do Brasil de uma vez so. O Farolivro fareja as ofertas direto do seu navegador e mostra o menor preco, com honestidade sobre o que foi coberto.">
+<title>Farolivro · fareje o menor preço de qualquer livro, novo ou usado</title>
+<meta name="description" content="Compare preços de livros novos e usados nas principais lojas do Brasil de uma vez só. O Farolivro fareja as ofertas direto do seu navegador e mostra o menor preço, com honestidade sobre o que foi coberto.">
 <link rel="canonical" href="https://farolivro.bobagi.space/">
 <meta name="farolivro-ext" content="__EXT_VERSION__">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Farolivro · fareje o menor preco de qualquer livro">
-<meta property="og:description" content="Compare precos de livros novos e usados nas principais lojas do Brasil de uma vez so, direto do seu navegador.">
+<meta property="og:title" content="Farolivro · fareje o menor preço de qualquer livro">
+<meta property="og:description" content="Compare preços de livros novos e usados nas principais lojas do Brasil de uma vez só, direto do seu navegador.">
 <meta property="og:url" content="https://farolivro.bobagi.space/">
 <meta property="og:locale" content="pt_BR">
 <link rel="stylesheet" href="/static/fonts/faces.css">
@@ -21,7 +21,7 @@
   "@type": "WebApplication",
   "name": "Farolivro",
   "url": "https://farolivro.bobagi.space/",
-  "description": "Comparador de precos de livros novos e usados no Brasil. Busca varias lojas de uma vez, direto do navegador, e mostra o menor preco.",
+  "description": "Comparador de preços de livros novos e usados no Brasil. Busca várias lojas de uma vez, direto do navegador, e mostra o menor preço.",
   "applicationCategory": "ShoppingApplication",
   "operatingSystem": "Web",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
@@ -46,8 +46,8 @@
     </svg>
     <span class="appmark-t">Farolivro</span>
   </a>
-  <span id="ext-chip" class="chip chip-off">Farolivro: nao instalado</span>
-  <button id="ext-update" class="chip-btn" type="button" hidden>Verificar atualizacao</button>
+  <span id="ext-chip" class="chip chip-off">Farolivro: não instalado</span>
+  <button id="ext-update" class="chip-btn" type="button" hidden>Verificar atualização</button>
   <span id="ext-latest" class="ext-latest" hidden></span>
   <span id="ext-update-msg" class="ext-update-msg" hidden></span>
 </header>
@@ -68,7 +68,7 @@
       </svg>
       <div>
         <h1>Quanto custa esse livro, em todo lugar?</h1>
-        <p class="sub">O Farolivro fareja o menor preco de um livro, novo ou usado, nas principais lojas do Brasil ao mesmo tempo: das grandes vitrines aos sebos. A busca roda no seu navegador, nunca no servidor.</p>
+        <p class="sub">O Farolivro fareja o menor preço de um livro, novo ou usado, nas principais lojas do Brasil ao mesmo tempo: das grandes vitrines aos sebos. A busca roda no seu navegador, nunca no servidor.</p>
       </div>
     </div>
     <svg class="trail" viewBox="0 0 560 34" preserveAspectRatio="none" aria-hidden="true">
@@ -76,7 +76,7 @@
     </svg>
     <form id="search-form" autocomplete="off">
       <input id="q" name="q" type="search" required minlength="3" maxlength="120"
-             placeholder="titulo, autor ou ISBN (com ou sem hifen)">
+             placeholder="título, autor ou ISBN (com ou sem hífen)">
       <button type="submit" id="go">Farejar</button>
     </form>
     <p id="msg" class="msg" hidden></p>
@@ -99,16 +99,16 @@
       </svg>
       <span id="sniffer-text">farejando as lojas...</span>
     </div>
-    <p class="hint">Exemplos: <button class="ex" type="button">manual de direito penal parte geral rogerio sanches</button> · <button class="ex" type="button">duna frank herbert capa dura</button> · <button class="ex" type="button">9788576573135</button></p>
+    <p class="hint">Exemplos: <button class="ex" type="button">manual de direito penal parte geral rogério sanches</button> · <button class="ex" type="button">duna frank herbert capa dura</button> · <button class="ex" type="button">9788576573135</button></p>
   </section>
 
   <section id="ext-panel" class="panel" hidden>
-    <h2>Instale o Farolivro (gratis, 1 clique)</h2>
-    <p>O Farolivro e uma extensao do Chrome. Como as lojas bloqueiam buscas de servidor, a busca roda no SEU navegador (por isso a extensao). Instale pela loja oficial e volte aqui: o indicador la em cima vira "conectado" e a busca ja funciona.</p>
+    <h2>Instale o Farolivro (grátis, 1 clique)</h2>
+    <p>O Farolivro é uma extensão do Chrome. Como as lojas bloqueiam buscas feitas por servidor, a busca roda no SEU navegador (por isso a extensão). Instale pela loja oficial e volte aqui: o indicador lá em cima vira "conectado" e a busca já funciona.</p>
     <a class="cta" id="store-cta" href="https://chromewebstore.google.com/detail/farolivro/jnkjabpgnocifbnnceoepijbcggmkkek" target="_blank" rel="noopener">Instalar pela Chrome Web Store</a>
     <p class="fine" id="panel-ver" hidden></p>
-    <p class="panel-note" id="panel-mobile" hidden>Voce esta no celular ou num navegador sem extensoes. O Farolivro roda no Chrome (ou Edge, Brave, Opera) do computador: abra este site la para farejar as lojas. Aqui da para ver as buscas que ja foram farejadas nas ultimas horas.</p>
-    <p class="fine">Depois de instalar, recarregue esta pagina. O Farolivro so age quando voce pede uma busca; ele nao le sua navegacao.</p>
+    <p class="panel-note" id="panel-mobile" hidden>Você está no celular ou num navegador sem extensões. O Farolivro roda no Chrome (ou Edge, Brave, Opera) do computador: abra este site lá para farejar as lojas. Aqui dá para ver as buscas que já foram farejadas nas últimas horas.</p>
+    <p class="fine">Depois de instalar, recarregue esta página. O Farolivro só age quando você pede uma busca; ele não lê sua navegação.</p>
   </section>
 
   <section id="status-area" hidden>
@@ -119,18 +119,18 @@
   <section id="results" hidden>
     <div id="group-novo" class="group"><h2>Novo</h2><div class="cards"></div></div>
     <div id="group-usado" class="group"><h2>Usado e seminovo</h2><div class="cards"></div></div>
-    <div id="group-sem" class="group"><h2>Condicao nao informada</h2><div class="cards"></div></div>
-    <div id="group-prov" class="group prov"><h2>Provaveis (confira antes de confiar)</h2>
-      <p class="fine">Bateram no titulo mas algo nao fecha (autor ausente, formato nao confirmado). Preferimos avisar a errar.</p>
+    <div id="group-sem" class="group"><h2>Condição não informada</h2><div class="cards"></div></div>
+    <div id="group-prov" class="group prov"><h2>Prováveis (confira antes de confiar)</h2>
+      <p class="fine">Bateram no título, mas algo não fecha (autor ausente, formato não confirmado). Preferimos avisar a errar.</p>
       <div class="cards"></div></div>
-    <details id="filtered"><summary>Filtrados (kits, PDFs, outras edicoes): <span id="filtered-n">0</span></summary>
+    <details id="filtered"><summary>Filtrados (kits, PDFs, outras edições): <span id="filtered-n">0</span></summary>
       <div id="filtered-list"></div></details>
   </section>
 
 </main>
 
 <footer class="foot">
-  <p>Cobertura parcial e sempre dita na cara: loja que falhou aparece como falha, nunca some. Frete ainda nao entra no total ("+ frete a calcular"). Farolivro e um projeto pessoal, sem afiliacao com as lojas. <a href="/privacidade">Privacidade</a> · <a href="https://github.com/Bobagi/comparador-livros" rel="noopener">Codigo aberto</a> · Feito por <a href="https://bobagi.space" rel="noopener">Bobagi</a>.</p>
+  <p>Cobertura parcial é sempre dita na cara: loja que falhou aparece como falha, nunca some. O frete ainda não entra no total ("+ frete a calcular"). O Farolivro é um projeto pessoal, sem afiliação com as lojas. <a href="/privacidade">Privacidade</a> · <a href="https://github.com/Bobagi/comparador-livros" rel="noopener">Código aberto</a> · Feito por <a href="https://bobagi.space" rel="noopener">Bobagi</a>.</p>
 </footer>
 
 <script src="/static/app.js"></script>

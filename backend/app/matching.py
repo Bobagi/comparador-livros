@@ -215,11 +215,11 @@ def evaluate_listing(
     base = dict(score=score, condition=cond, formats=fmts)
 
     if DIGITAL_RE.search(soft):
-        return MatchResult("filtrada", reason="digital (ebook/pdf/audio/resumo)", **base)
+        return MatchResult("filtrada", reason="digital (e-book/PDF/áudio/resumo)", **base)
     if NOTBOOK_RE.search(soft):
-        return MatchResult("filtrada", reason="nao e livro", **base)
+        return MatchResult("filtrada", reason="não é livro", **base)
     if QUADRINHOS_RE.search(soft) and not QUADRINHOS_RE.search(soft_norm(query)):
-        return MatchResult("filtrada", reason="edicao em quadrinhos", **base)
+        return MatchResult("filtrada", reason="edição em quadrinhos", **base)
     if KIT_RE.search(soft):
         return MatchResult("filtrada", reason="kit/lote/box", **base)
 
@@ -261,10 +261,10 @@ def evaluate_listing(
             q_fmts2 = extract_formats(query)
             if q_fmts2 and fmts and q_fmts2.isdisjoint(fmts):
                 return MatchResult("filtrada", reason="formato divergente (capa dura x brochura)", **base)
-            return MatchResult("provavel", reason="anuncio curto: autor nao confirmado", **base)
+            return MatchResult("provavel", reason="anúncio curto: autor não confirmado", **base)
 
     if score < SCORE_THRESHOLD:
-        return MatchResult("filtrada", reason=f"titulo nao bate (score {score:.0f})", **base)
+        return MatchResult("filtrada", reason=f"título não bate (nota {score:.0f})", **base)
 
     q_fmts = extract_formats(query)
     if q_fmts and fmts and q_fmts.isdisjoint(fmts):
@@ -280,12 +280,12 @@ def evaluate_listing(
         author_present = bool(a_set & l_set)
         if not author_present and extras:
             return MatchResult(
-                "provavel", reason="autor nao aparece no anuncio e ha termos estranhos", **base
+                "provavel", reason="autor não aparece no anúncio e há termos estranhos", **base
             )
     if matched_via_core and q_pub and not l_pub:
-        return MatchResult("provavel", reason="editora pedida nao confirmada no anuncio", **base)
+        return MatchResult("provavel", reason="editora pedida não confirmada no anúncio", **base)
     if q_fmts and not fmts:
-        return MatchResult("provavel", reason="formato pedido nao confirmado no anuncio", **base)
+        return MatchResult("provavel", reason="formato pedido não confirmado no anúncio", **base)
 
     return MatchResult("confirmada", **base)
 

@@ -21,8 +21,8 @@
     olx: 'OLX', enjoei: 'Enjoei', shopee: 'Shopee',
   };
   const STATUS_LABEL = {
-    pending: 'farejando...', ok: 'ok', empty: 'nenhum anuncio',
-    blocked: 'bloqueou a busca', error: 'erro', sem_coletor: 'nao respondeu',
+    pending: 'farejando...', ok: 'ok', empty: 'nenhum anúncio',
+    blocked: 'bloqueou a busca', error: 'erro', sem_coletor: 'não respondeu',
     login: 'entre na sua conta da Shopee neste Chrome',
   };
   const STATUS_LABEL_NO_EXT = { ...STATUS_LABEL, pending: 'aguardando o Farolivro' };
@@ -60,7 +60,7 @@
   if (latestVer) {
     extLatest.textContent = `mais recente: v${latestVer}`;
     extLatest.hidden = false;
-    panelVer.textContent = `Versao mais recente da extensao: v${latestVer}.`;
+    panelVer.textContent = `Versão mais recente da extensão: v${latestVer}.`;
     panelVer.hidden = false;
   }
 
@@ -85,7 +85,7 @@
     // instalada != mais recente: o botao vira chamada direta de atualizacao
     const outdated = ready && latestVer && version && version !== latestVer;
     extUpdate.classList.toggle('has-update', outdated);
-    extUpdate.textContent = outdated ? `Atualizar para v${latestVer}` : 'Verificar atualizacao';
+    extUpdate.textContent = outdated ? `Atualizar para v${latestVer}` : 'Verificar atualização';
   }
   setExt(false);
   extPanel.hidden = false;
@@ -105,9 +105,9 @@
     switch (status) {
       case 'update_available':
         return version ? `Atualizando para a v${version}...` : 'Atualizando...';
-      case 'no_update': return 'Voce ja esta na versao mais recente.';
-      case 'throttled': return 'O Chrome esta limitando a checagem. Tente em alguns minutos.';
-      default: return 'Nao deu para checar agora. O Chrome atualiza sozinho em ate algumas horas.';
+      case 'no_update': return 'Você já está na versão mais recente.';
+      case 'throttled': return 'O Chrome está limitando a checagem. Tente em alguns minutos.';
+      default: return 'Não deu para checar agora. O Chrome atualiza sozinho em até algumas horas.';
     }
   }
   extUpdate.addEventListener('click', () => {
@@ -171,8 +171,8 @@
         statusArea.hidden = true;
         results.hidden = true;
         showMsg(isMobile
-          ? 'Ninguem farejou este livro nas ultimas horas. Para farejar as lojas agora, abra o Farolivro no Chrome do computador com a extensao instalada.'
-          : 'Para farejar as lojas o Farolivro precisa da extensao (gratis) neste navegador. Instale abaixo, recarregue a pagina e busque de novo.');
+          ? 'Ninguém farejou este livro nas últimas horas. Para farejar as lojas agora, abra o Farolivro no Chrome do computador com a extensão instalada.'
+          : 'Para farejar as lojas, o Farolivro precisa da extensão (grátis) neste navegador. Instale abaixo, recarregue a página e busque de novo.');
         extPanel.hidden = false;
         extPanel.classList.add('attn');
         extPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -232,7 +232,7 @@
   function offerCard(o) {
     const card = el('article', 'card');
     card.appendChild(el('span', o.price_cents ? 'price' : 'price nd',
-      o.price_cents ? brl(o.price_cents) : 'sem preco visivel'));
+      o.price_cents ? brl(o.price_cents) : 'sem preço visível'));
     card.appendChild(el('span', 't', o.title));
     const meta = el('div', 'meta');
     meta.appendChild(el('span', 'tag loja', STORE_LABEL[o.store] || o.store));
@@ -241,7 +241,7 @@
     if (o.seller) meta.appendChild(el('span', 'tag', o.seller));
     meta.appendChild(el('span', 'tag frete', '+ frete a calcular'));
     if (o.reason) meta.appendChild(el('span', 'tag', o.reason));
-    const a = el('a', 'go', 'ver anuncio');
+    const a = el('a', 'go', 'ver anúncio');
     a.href = o.url; a.rel = 'noopener nofollow'; a.target = '_blank';
     meta.appendChild(a);
     card.appendChild(meta);
@@ -275,7 +275,7 @@
         : s.status === 'pending' ? 's-wait' : 's-bad';
       const labels = extReady ? STATUS_LABEL : STATUS_LABEL_NO_EXT;
       const label = s.status === 'ok'
-        ? `${STORE_LABEL[s.store]}: ${s.count} anuncio${s.count === 1 ? '' : 's'}`
+        ? `${STORE_LABEL[s.store]}: ${s.count} anúncio${s.count === 1 ? '' : 's'}`
         : `${STORE_LABEL[s.store]}: ${labels[s.status] || s.status}`;
       return el('span', `store-chip ${cls}`, label);
     }));
@@ -310,8 +310,8 @@
     if (data.done && !anyOffer) {
       const allDead = data.stores.every((s) => s.status !== 'ok');
       showMsg(allDead
-        ? 'Nenhuma loja trouxe anuncios para esta busca. Tente o titulo mais curto ou o ISBN; se uma loja bloqueou, as amostras ja foram enviadas para ajustar o Farolivro.'
-        : 'As lojas responderam, mas nenhum anuncio bateu com o livro buscado. Veja os filtrados abaixo.');
+        ? 'Nenhuma loja trouxe anúncios para esta busca. Tente o título mais curto ou o ISBN; se uma loja bloqueou, as amostras já foram enviadas para ajustar o Farolivro.'
+        : 'As lojas responderam, mas nenhum anúncio bateu com o livro buscado. Veja os filtrados abaixo.');
     }
   }
 })();
